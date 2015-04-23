@@ -33,6 +33,7 @@ int hFreq=1000;
 int targPos=9000;
 int tRange=2000;
 long timeOffset;
+unsigned long tS;
 
 int lastPos;
 int mouseDelta;
@@ -46,6 +47,7 @@ int bb=0;
 # define s2pin 6
 # define texturePin 5
 # define texturePinG 4
+# define readyPin 11
 
 SM Simple(S1); // Trial State Machine
 
@@ -57,17 +59,18 @@ void setup()
     Serial.begin(115200);
     Serial.println("Start");
 
-    if (Usb.Init() == -1)
+    if (Usb.Init() == -1){
         Serial.println("OSC did not start.");
+    }
 
     delay(200);
-    
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     pinMode(s1pin, OUTPUT);
     pinMode(s2pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
     pinMode(texturePinG,OUTPUT);
-    timeOffset=Prs.timeStamp;
+    pinMode(readyPin,OUTPUT);
+    timeOffset=Prs.timeStamp; 
 }
 
 void loop()
@@ -79,7 +82,8 @@ void loop()
 
 //------------ State Definitions
 
-State S1(){  
+State S1(){
+  digitalWrite(readyPin, HIGH);  
   digitalWrite(s1pin, HIGH);
   digitalWrite(s2pin, LOW);
   //sin_texture(Prs.curPos,lFreq);
@@ -87,8 +91,11 @@ State S1(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   aa=aa+moveTacker(mouseDelta);
-  Serial.print("state 1 bitches... ");
-  Serial.println( Prs.curPos );
+  tS=Prs.timeStamp-timeOffset;
+  Serial.println(1);
+  Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
   if(aa<=0) Simple.Set(S2);
 }
 
@@ -108,12 +115,11 @@ State S3(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   bb=bb+runTacker(mouseDelta);
-  Serial.print("state 3 bitches ");
-  Serial.print( bb );
-  Serial.print("ts= ");
-  Serial.print(Prs.timeStamp-timeOffset);
-  Serial.print(" xpos= ");
+  tS=Prs.timeStamp-timeOffset;
+  Serial.println(3);
   Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
   if(bb>=1000) Simple.Set(S4);
 }
 
@@ -172,6 +178,9 @@ int runTacker(int mov){
   }    
   return rMov; 
 }
+
+
+
     
     
 
