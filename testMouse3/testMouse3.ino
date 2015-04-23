@@ -38,6 +38,7 @@ unsigned long tS;
 int lastPos;
 int mouseDelta;
 const float pi = 3.14;
+int sB;
 
 // These control stop/run detection
 int aa=10000;
@@ -47,7 +48,7 @@ int bb=0;
 # define s2pin 6
 # define texturePin 5
 # define texturePinG 4
-# define readyPin 11
+# define readyPin 8
 
 SM Simple(S1); // Trial State Machine
 
@@ -57,20 +58,21 @@ SM Simple(S1); // Trial State Machine
 void setup()
 {
     Serial.begin(115200);
-    Serial.println("Start");
-
-    if (Usb.Init() == -1){
+        if (Usb.Init() == -1)
         Serial.println("OSC did not start.");
-    }
 
     delay(200);
+    
+    Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     pinMode(s1pin, OUTPUT);
     pinMode(s2pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
     pinMode(texturePinG,OUTPUT);
     pinMode(readyPin,OUTPUT);
-    timeOffset=Prs.timeStamp; 
+    timeOffset=Prs.timeStamp;
+    digitalWrite(readyPin, LOW);
+    sB=1;
 }
 
 void loop()
@@ -82,10 +84,8 @@ void loop()
 
 //------------ State Definitions
 
-State S1(){
-  digitalWrite(readyPin, HIGH);  
-  digitalWrite(s1pin, HIGH);
-  digitalWrite(s2pin, LOW);
+State S1(){ 
+  digitalWrite(readyPin, HIGH);
   //sin_texture(Prs.curPos,lFreq);
   burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
@@ -96,40 +96,20 @@ State S1(){
   Serial.println(Prs.curPos);
   Serial.println(mouseDelta);
   Serial.println(tS);
-  if(aa<=0) Simple.Set(S2);
+  sB=lookForSerial();
+  Serial.println(sB);
+  if(sB==53) Simple.Set(S2);
 }
 
 State S2(){
+  digitalWrite(readyPin, LOW);
   timeOffset=Prs.timeStamp;
   lastPos=0;
   aa=10000;
   bb=0;
-  digitalWrite(texturePin, LOW);
-  Simple.Set(S3);
-}
-
-State S3(){
-
-  digitalWrite(s1pin, LOW);
-  digitalWrite(s2pin, HIGH);
-  mouseDelta=Prs.curPos-lastPos;
-  lastPos=Prs.curPos;
-  bb=bb+runTacker(mouseDelta);
-  tS=Prs.timeStamp-timeOffset;
-  Serial.println(3);
-  Serial.println(Prs.curPos);
-  Serial.println(mouseDelta);
-  Serial.println(tS);
-  if(bb>=1000) Simple.Set(S4);
-}
-
-State S4(){
-  timeOffset=Prs.timeStamp;
-  lastPos=0;
-  aa=10000;
-  bb=0;
-  digitalWrite(texturePin, LOW);
-  Simple.Set(S1);
+  sB=lookForSerial();
+  //digitalWrite(texturePin, LOW);
+  if(sB==49) Simple.Set(S1);
 }
 
 
@@ -178,6 +158,19 @@ int runTacker(int mov){
   }    
   return rMov; 
 }
+
+int lookForSerial(){
+  int saBit;
+  if(Serial.available()>0){
+      saBit=Serial.read();
+  }
+  else if(Serial.available()<=0){
+    saBit=48;
+    digitalWrite(readyPin, LOW);
+  }
+  return saBit;
+}
+ 
 
 
 
