@@ -11,19 +11,19 @@ p=[];
 d=[];
 t=[];
 sB=[];
+altT=[];
 targetPos=9000;
 targetRange=2000;
 
 
 %%
-s1 = serial('/dev/cu.usbmodem1461');    % define serial port
+s1 = serial('/dev/tty.usbmodem1461');    % define serial port
 s1.BaudRate=115200;               % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
-%fprintf(s1,'%u',1);  % 1 is 49 in ascii
+fprintf(s1,'%u',1);  % 1 is 49 in ascii
 
 %%
-fprintf(s1,'%u',1);  % 1 is 49 in ascii
 try                             % use try catch to ensure fclose
                                 % signal the arduino to start collection
 w=fscanf(s1,'%s');              % must define the input % d or %s, etc.
@@ -43,6 +43,7 @@ while (toc(t0)<=numSec)
     d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
     t(i)=fscanf(s1,'%f');
     sB(i)=fscanf(s1,'%d');  % debug transitions
+    t(i)=fscanf(s1,'%f');
     fprintf(s1,'%u',3);   % debug transitions (3 is 51 in ascii); 5 is 53
 end
 
@@ -51,8 +52,6 @@ fclose(s1);
 figure,plot(t./1000,p,'ko-')
 hold all,plot([0 numSec],[targetPos targetPos],'b-')
 hold all,plot([0 numSec],[targetPos+targetRange targetPos+targetRange],'b-')                       
-
-    
 
 catch exception
     fclose(s1);                 

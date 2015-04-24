@@ -8,7 +8,7 @@ class MouseRptParser : public MouseReportParser
 
 public:
         long curPos;
-        unsigned long timeStamp;
+        // unsigned long timeStamp;
         
 protected:
 	void OnMouseMove	(MOUSEINFO *mi);
@@ -16,7 +16,7 @@ protected:
 
 void MouseRptParser::OnMouseMove(MOUSEINFO *mi)
 {
-      timeStamp=millis();
+      //timeStamp=millis();
       curPos=curPos+(mi->dX);
 };
 
@@ -45,12 +45,12 @@ int aa=10000;
 int bb=0;
 
 # define s1pin 7
-# define s2pin 6
+# define s2pin 9
 # define texturePin 5
 # define texturePinG 4
 # define readyPin 8
 
-SM Simple(S1); // Trial State Machine
+SM Simple(S1_H, S1_B); // Trial State Machine
 
 
 //------------- Program Block
@@ -70,8 +70,8 @@ void setup()
     pinMode(texturePin,OUTPUT);
     pinMode(texturePinG,OUTPUT);
     pinMode(readyPin,OUTPUT);
-    timeOffset=Prs.timeStamp;
-    digitalWrite(readyPin, LOW);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s1pin, LOW);
     sB=1;
 }
 
@@ -84,32 +84,41 @@ void loop()
 
 //------------ State Definitions
 
-State S1(){ 
-  digitalWrite(readyPin, HIGH);
+State S1_H(){
+  digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, LOW);
+}
+
+
+State S1_B(){ 
+  digitalWrite(readyPin, LOW);
   //sin_texture(Prs.curPos,lFreq);
   burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   aa=aa+moveTacker(mouseDelta);
-  tS=Prs.timeStamp-timeOffset;
+  tS=Simple.Statetime();
   Serial.println(1);
   Serial.println(Prs.curPos);
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  if(sB==53) Simple.Set(S2);
+  if(sB==53) Simple.Set(S2_H,S2_B);
 }
 
-State S2(){
-  digitalWrite(readyPin, LOW);
-  timeOffset=Prs.timeStamp;
+State S2_H(){
+  digitalWrite(s2pin, HIGH);
+  digitalWrite(s1pin, HIGH);
+}
+
+State S2_B(){
   lastPos=0;
   aa=10000;
   bb=0;
   sB=lookForSerial();
   //digitalWrite(texturePin, LOW);
-  if(sB==49) Simple.Set(S1);
+  if(sB==49) Simple.Set(S1_H,S1_B);
 }
 
 
