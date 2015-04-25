@@ -45,10 +45,9 @@ int aa=10000;
 int bb=0;
 
 # define s1pin 7
-# define s2pin 9
+# define s2pin 8
+# define s3pin 9
 # define texturePin 5
-# define texturePinG 4
-# define readyPin 8
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -68,9 +67,9 @@ void setup()
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     pinMode(s1pin, OUTPUT);
     pinMode(s2pin, OUTPUT);
+    pinMode(s3pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
-    pinMode(texturePinG,OUTPUT);
-    pinMode(readyPin,OUTPUT);
+    digitalWrite(s3pin, LOW);
     digitalWrite(s2pin, LOW);
     digitalWrite(s1pin, LOW);
     sB=1;
@@ -86,13 +85,13 @@ void loop()
 //------------ State Definitions
 
 State S1_H(){
-  digitalWrite(s1pin, LOW);
+  digitalWrite(s1pin, HIGH);
   digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, LOW);
 }
 
 
 State S1_B(){ 
-  digitalWrite(readyPin, LOW);
   //sin_texture(Prs.curPos,lFreq);
   //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
@@ -109,12 +108,12 @@ State S1_B(){
 }
 
 State S2_H(){
+  digitalWrite(s1pin, LOW);
   digitalWrite(s2pin, HIGH);
-  digitalWrite(s1pin, HIGH);
+  digitalWrite(s3pin, LOW);
 }
 
 State S2_B(){
-  digitalWrite(readyPin, LOW);
   //sin_texture(Prs.curPos,lFreq);
   burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
@@ -133,12 +132,12 @@ State S2_B(){
 }
 
 State S3_H(){
-  digitalWrite(s2pin, LOW);
   digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, HIGH);
 }
 
 State S3_B(){
-  digitalWrite(readyPin, LOW);
   //sin_texture(Prs.curPos,lFreq);
   //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
@@ -152,6 +151,7 @@ State S3_B(){
   sB=lookForSerial();
   Serial.println(sB);
   if(sB==49) Simple.Set(S1_H,S1_B);
+  if(Simple.Timeout(5000)) Simple.Set(S1_H,S1_B);
 }
 
 
@@ -161,11 +161,9 @@ void sin_texture(int pos, int freq)
 {
   if (sin(2*pi*pos*freq)>0){
     digitalWrite(texturePin, HIGH);
-    digitalWrite(texturePinG, LOW);
   } 
   else if (sin(2*pi*pos*freq)<=0){
     digitalWrite(texturePin, LOW);
-    digitalWrite(texturePinG, LOW);
   }          
 }
 
@@ -207,8 +205,7 @@ int lookForSerial(){
       saBit=Serial.read();
   }
   else if(Serial.available()<=0){
-    saBit=48;
-    digitalWrite(readyPin, LOW);
+    saBit=48;  // This is something ... 
   }
   return saBit;
 }

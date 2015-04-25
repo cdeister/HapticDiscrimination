@@ -2,7 +2,7 @@
 % http://robotgrrl.com/blog/2010/01/15/arduino-to-matlab-read-in-sensor-data/
 % and also, http://www.arduino.cc/en/Tutorial/SerialCallResponse
 clear data
-numTrials=10;
+numTrials=3;
 sensorCal=9000/9.5;  % in inches
 for k=1:numTrials;
 %%
