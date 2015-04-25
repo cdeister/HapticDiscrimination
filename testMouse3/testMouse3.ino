@@ -60,6 +60,7 @@ void setup()
     Serial.begin(115200);
         if (Usb.Init() == -1)
         Serial.println("OSC did not start.");
+        Serial.setTimeout(100);
 
     delay(200);
     
@@ -70,8 +71,8 @@ void setup()
     pinMode(texturePin,OUTPUT);
     pinMode(texturePinG,OUTPUT);
     pinMode(readyPin,OUTPUT);
-  digitalWrite(s2pin, LOW);
-  digitalWrite(s1pin, LOW);
+    digitalWrite(s2pin, LOW);
+    digitalWrite(s1pin, LOW);
     sB=1;
 }
 
@@ -93,7 +94,7 @@ State S1_H(){
 State S1_B(){ 
   digitalWrite(readyPin, LOW);
   //sin_texture(Prs.curPos,lFreq);
-  burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
+  //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   aa=aa+moveTacker(mouseDelta);
@@ -113,11 +114,43 @@ State S2_H(){
 }
 
 State S2_B(){
-  lastPos=0;
-  aa=10000;
-  bb=0;
+  digitalWrite(readyPin, LOW);
+  //sin_texture(Prs.curPos,lFreq);
+  burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
+  mouseDelta=Prs.curPos-lastPos;
+  lastPos=Prs.curPos;
+  aa=aa+moveTacker(mouseDelta);
+  tS=Simple.Statetime();
+  Serial.println(2);
+  Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
   sB=lookForSerial();
-  //digitalWrite(texturePin, LOW);
+  Serial.println(sB);
+  if(Simple.Timeout(10000)) Simple.Set(S3_H,S3_B);
+  if(sB==49) Simple.Set(S1_H,S1_B);
+  if(sB==51) Simple.Set(S3_H,S3_B);
+}
+
+State S3_H(){
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s1pin, LOW);
+}
+
+State S3_B(){
+  digitalWrite(readyPin, LOW);
+  //sin_texture(Prs.curPos,lFreq);
+  //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
+  mouseDelta=Prs.curPos-lastPos;
+  lastPos=Prs.curPos;
+  aa=aa+moveTacker(mouseDelta);
+  tS=Simple.Statetime();
+  Serial.println(3);
+  Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
+  sB=lookForSerial();
+  Serial.println(sB);
   if(sB==49) Simple.Set(S1_H,S1_B);
 }
 
