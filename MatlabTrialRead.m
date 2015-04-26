@@ -1,21 +1,27 @@
 % Largley Folowing robot grrl tutorial:
 % http://robotgrrl.com/blog/2010/01/15/arduino-to-matlab-read-in-sensor-data/
 % and also, http://www.arduino.cc/en/Tutorial/SerialCallResponse
-clear data
-numTrials=3;
+
+% TODO: write collect data function to clean up default state. lots of
+% repate code
+
+% clear data
+numTrials=1;
 sensorCal=9000/9.5;  % in inches
-for k=1:numTrials;
+for k=1;
 %%
 clc;
 clear cS d i numSec p s s1 sB t t0 targetPos targetRange w
-numSec=19;
+numSec=100;
 s=[];
 p=[];
 d=[];
 t=[];
 sB=[];
-targetPos=9000;
-targetRange=2000;
+d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
+
+targetPos=4000;
+targetRange=600;
 %pause(0.2)
 
 %%
@@ -39,35 +45,96 @@ pause(0.5)   %<--- This has to be at leas 0.5 on my comp, or it will break. This
 % State 1 always collects 187 points with 186 over ~300 ms then a 2 sec
 % delay. 
 
-fprintf(s1,'%u',5);  % 1 is 49 in ascii
+fprintf(s1,'%u',1);  % 1 is 49 in ascii
 %pause(0.1)  %<--- irrenlevant apparently
 cS=1;
+sC=0;
 i=0;
 t0=tic;
 while (toc(t0)<=numSec)
-    if cS~=3
-    i=i+1;
-    s(i)=fscanf(s1,'%d');
-    p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
-    d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
-    t(i)=fscanf(s1,'%f');
-    sB(i)=fscanf(s1,'%d');  % debug transitions
-    fprintf(s1,'%u',2);   % debug transitions (3 is 51 in ascii); 5 is 53
-    cS=s(i);
-    else
-        break
+    if cS==1
+        i=i+1;
+        s(i)=fscanf(s1,'%d');
+        p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+        d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+        t(i)=fscanf(s1,'%f');
+        sB(i)=fscanf(s1,'%d');  % debug transitions
+        cS=s(i);
+        
+    elseif cS==2
+        if t(i)<4000
+            i=i+1;
+            s(i)=fscanf(s1,'%d');
+            p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+            d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+            t(i)=fscanf(s1,'%f');
+            sB(i)=fscanf(s1,'%d');  % debug transitions
+            cS=s(i);
+        else
+            if mean(abs(d(end-2999:end)))<0.1
+                sC=sC+1;
+                i=i+1;
+                s(i)=fscanf(s1,'%d');
+                p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+                d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+                t(i)=fscanf(s1,'%f');
+                sB(i)=fscanf(s1,'%d');  % debug transitions
+                cS=s(i);
+                fprintf(s1,'%u',3);
+                cS=3;
+                disp(['stop ' num2str(sC)])  % When I last left this was looping multiple times.
+            else
+                i=i+1;
+                s(i)=fscanf(s1,'%d');
+                p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+                d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+                t(i)=fscanf(s1,'%f');
+                sB(i)=fscanf(s1,'%d');  % debug transitions
+                cS=s(i);
+            end
+        end
+        
+
+        
+    elseif cS==3
+        if t(i)<3000
+            sC=0; % debug flag
+            i=i+1;
+            s(i)=fscanf(s1,'%d');
+            p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+            d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+            t(i)=fscanf(s1,'%f');
+            sB(i)=fscanf(s1,'%d');  % debug transitions
+            cS=s(i);
+        else  % if the animal reamins still re-enter the trial state
+            if mean(abs(d(end-999:end)))<2
+                fprintf(s1,'%u',2);
+                cS=2;
+            else
+                i=i+1;
+                s(i)=fscanf(s1,'%d');
+                p(i)=fscanf(s1,'%d');       % must define the input % d, %f, %s, etc.
+                d(i)=fscanf(s1,'%f');       % must define the input % d, %f, %s, etc.
+                t(i)=fscanf(s1,'%f');
+                sB(i)=fscanf(s1,'%d');  % debug transitions
+                cS=s(i);
+            end
+        end
     end
 end
 
+
 fprintf(s1,'%u',3);  %debug <-- this should trigger a transition to the wait state
 fclose(s1);
-figure(88),plot(t(s==2)./1000,p(s==2),'ko-')
-hold all,plot(t(s==1)./1000,p(s==1),'ro-')
-hold all,plot(t(s==3)./1000,p(s==3),'bo-')
-hold all,plot([0 numSec],[targetPos targetPos],'b-')
-hold all,plot([0 numSec],[targetPos+targetRange targetPos+targetRange],'b-')
+%%
+figure(88),plot(p,'k-')
+hold all,plot(s*1000,'r-')
+hold all,plot(d,'b-')
+hold all,plot([0 size(t,2)],[targetPos targetPos],'b-')
+hold all,plot([0 size(t,2)],[targetPos+targetRange targetPos+targetRange],'b-')
 title(['trial number ' num2str(k)])
 
+%%
 data.s{k}=s;
 data.p{k}=p;
 data.d{k}=d;
@@ -82,22 +149,22 @@ catch exception
 end    
 end
 
-%%
-figure(199),hold all
-plot([0 15],[targetPos./sensorCal targetPos./sensorCal],'b-')
-plot([0 15],[(targetPos+targetRange)./sensorCal (targetPos+targetRange)./sensorCal],'b-')
-for n=1:numTrials
-    figure(199),hold all
-    plot(data.t{n}(data.s{n}==2)./1000,data.p{n}(data.s{n}==2)./sensorCal,'k-')
-end
-ylabel('position in inches')
-xlabel('time in seconds')
-
-%%
-figure(197),hold all
-
-for n=1:numTrials
-    figure(197),hold all
-    plot(data.t{n}(data.s{n}==1)./1000,data.p{n}(data.s{n}==1),'ok-')
-
-end
+% %%
+% figure(199),hold all
+% plot([0 15],[targetPos./sensorCal targetPos./sensorCal],'b-')
+% plot([0 15],[(targetPos+targetRange)./sensorCal (targetPos+targetRange)./sensorCal],'b-')
+% for n=1:numTrials
+%     figure(199),hold all
+%     plot(data.t{n}(data.s{n}==2)./1000,data.p{n}(data.s{n}==2)./sensorCal,'k-')
+% end
+% ylabel('position in inches')
+% xlabel('time in seconds')
+% 
+% %%
+% figure(197),hold all
+% 
+% for n=1:numTrials
+%     figure(197),hold all
+%     plot(data.t{n}(data.s{n}==1)./1000,data.p{n}(data.s{n}==1),'ok-')
+% 
+% end

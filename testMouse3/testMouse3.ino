@@ -29,25 +29,23 @@ MouseRptParser  Prs;
 
 //**** My Crap
 int lFreq=1;
-int hFreq=1000;
-int targPos=9000;
-int tRange=2000;
+int hFreq=200;
+int targPos=4000;
+int tRange=600;
 long timeOffset;
 unsigned long tS;
+int lastKnownState=49;
 
 int lastPos;
 int mouseDelta;
 const float pi = 3.14;
 int sB;
 
-// These control stop/run detection
-int aa=10000;
-int bb=0;
-
 # define s1pin 7
 # define s2pin 8
 # define s3pin 9
 # define texturePin 5
+# define texturePinG 4
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -69,10 +67,11 @@ void setup()
     pinMode(s2pin, OUTPUT);
     pinMode(s3pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
+    pinMode(texturePinG,OUTPUT);
     digitalWrite(s3pin, LOW);
     digitalWrite(s2pin, LOW);
     digitalWrite(s1pin, LOW);
-    sB=1;
+    sB=49;
 }
 
 void loop()
@@ -88,15 +87,15 @@ State S1_H(){
   digitalWrite(s1pin, HIGH);
   digitalWrite(s2pin, LOW);
   digitalWrite(s3pin, LOW);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=49;
 }
 
 
 State S1_B(){ 
-  //sin_texture(Prs.curPos,lFreq);
-  //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
-  mouseDelta=Prs.curPos-lastPos;
+  mouseDelta=Prs.curPos-lastPos;;
   lastPos=Prs.curPos;
-  aa=aa+moveTacker(mouseDelta);
   tS=Simple.Statetime();
   Serial.println(1);
   Serial.println(Prs.curPos);
@@ -104,13 +103,17 @@ State S1_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  if(sB==53) Simple.Set(S2_H,S2_B);
+  if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
+  if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
 State S2_H(){
   digitalWrite(s1pin, LOW);
   digitalWrite(s2pin, HIGH);
   digitalWrite(s3pin, LOW);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=50;
 }
 
 State S2_B(){
@@ -118,7 +121,6 @@ State S2_B(){
   burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
-  aa=aa+moveTacker(mouseDelta);
   tS=Simple.Statetime();
   Serial.println(2);
   Serial.println(Prs.curPos);
@@ -126,8 +128,8 @@ State S2_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  if(Simple.Timeout(10000)) Simple.Set(S3_H,S3_B);
-  if(sB==49) Simple.Set(S1_H,S1_B);
+  if(Simple.Timeout(30000)) Simple.Set(S3_H,S3_B);
+  // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
 }
 
@@ -135,14 +137,14 @@ State S3_H(){
   digitalWrite(s1pin, LOW);
   digitalWrite(s2pin, LOW);
   digitalWrite(s3pin, HIGH);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=51;
 }
 
 State S3_B(){
-  //sin_texture(Prs.curPos,lFreq);
-  //burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
-  aa=aa+moveTacker(mouseDelta);
   tS=Simple.Statetime();
   Serial.println(3);
   Serial.println(Prs.curPos);
@@ -151,7 +153,7 @@ State S3_B(){
   sB=lookForSerial();
   Serial.println(sB);
   if(sB==49) Simple.Set(S1_H,S1_B);
-  if(Simple.Timeout(5000)) Simple.Set(S1_H,S1_B);
+  if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
 
@@ -161,9 +163,11 @@ void sin_texture(int pos, int freq)
 {
   if (sin(2*pi*pos*freq)>0){
     digitalWrite(texturePin, HIGH);
+    digitalWrite(texturePinG, LOW);
   } 
   else if (sin(2*pi*pos*freq)<=0){
     digitalWrite(texturePin, LOW);
+    digitalWrite(texturePinG, LOW);
   }          
 }
 
@@ -188,7 +192,7 @@ int moveTacker(int mov){
   return rMov; 
 }
 
-int runTacker(int mov){
+int runTacker(int mov, int intPeriod){
   int rMov;
   if (abs(mov)>0){
     rMov=0;
@@ -203,9 +207,10 @@ int lookForSerial(){
   int saBit;
   if(Serial.available()>0){
       saBit=Serial.read();
+      lastKnownState=saBit;
   }
   else if(Serial.available()<=0){
-    saBit=48;  // This is something ... 
+    saBit=lastKnownState;
   }
   return saBit;
 }
