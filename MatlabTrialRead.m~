@@ -18,7 +18,6 @@ p=[];
 d=[];
 t=[];
 sB=[];
-tT=[];
 d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
 
 targetPos=4000;
@@ -61,8 +60,7 @@ while (toc(t0)<=numSec)
             p(i)=fscanf(s1,'%d');       
             d(i)=fscanf(s1,'%f');       
             t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d'); 
-            tT(i)=fscanf(s1,'%f');
+            sB(i)=fscanf(s1,'%d');  
             cS=s(i);
         case 2
             i=i+1;
@@ -70,8 +68,7 @@ while (toc(t0)<=numSec)
             p(i)=fscanf(s1,'%d');       
             d(i)=fscanf(s1,'%f');       
             t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
+            sB(i)=fscanf(s1,'%d');  
             cS=s(i);
             if t(i)>3000 && mean(abs(d(end-1999:end)))<0.1
                 fprintf(s1,'%u',3);
@@ -83,8 +80,7 @@ while (toc(t0)<=numSec)
             p(i)=fscanf(s1,'%d');       
             d(i)=fscanf(s1,'%f');       
             t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
+            sB(i)=fscanf(s1,'%d');  
             cS=s(i);
             if t(i)>aa && mean(abs(d(end-1999:end)))<0.1
                 fprintf(s1,'%u',2);

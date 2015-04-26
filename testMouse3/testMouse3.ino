@@ -34,12 +34,14 @@ int targPos=4000;
 int tRange=600;
 long timeOffset;
 unsigned long tS;
+unsigned long cT;
 int lastKnownState=49;
 
 int lastPos;
 int mouseDelta;
 const float pi = 3.14;
 int sB;
+
 
 # define s1pin 7
 # define s2pin 8
@@ -60,7 +62,7 @@ void setup()
         Serial.setTimeout(100);
 
     delay(200);
-    
+    cT=millis();
     Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     pinMode(s1pin, OUTPUT);
@@ -103,6 +105,7 @@ State S1_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
+  Serial.println(millis()-cT);
   if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
@@ -128,7 +131,8 @@ State S2_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  if(Simple.Timeout(30000)) Simple.Set(S3_H,S3_B);
+  Serial.println(millis()-cT);
+  if(Simple.Timeout(20000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
 }
@@ -152,6 +156,8 @@ State S3_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
+  Serial.println(millis()-cT);
+  // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
