@@ -28,9 +28,9 @@ HIDBoot<HID_PROTOCOL_MOUSE>    HidMouse(&Usb);
 MouseRptParser  Prs;
 
 //**** My Crap
-int lFreq=1;
+int lFreq=10;
 int hFreq=200;
-int targPos=4000;
+int targPos=6000;
 int tRange=600;
 long timeOffset;
 unsigned long tS;
