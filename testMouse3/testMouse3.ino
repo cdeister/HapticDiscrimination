@@ -28,10 +28,10 @@ HIDBoot<HID_PROTOCOL_MOUSE>    HidMouse(&Usb);
 MouseRptParser  Prs;
 
 //**** My Crap
-int lFreq=10;
-int hFreq=200;
+int lFreq=25;
+int hFreq=10;
 int targPos=6000;
-int tRange=600;
+int tRange=1000;
 long timeOffset;
 unsigned long tS;
 unsigned long cT;
@@ -135,6 +135,7 @@ State S2_B(){
   if(Simple.Timeout(20000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
+  if(sB==52) Simple.Set(S4_H,S4_B);
 }
 
 State S3_H(){
@@ -160,6 +161,32 @@ State S3_B(){
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
+}
+
+State S4_H(){
+  digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, LOW);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=52;
+}
+
+State S4_B(){
+  mouseDelta=Prs.curPos-lastPos;
+  lastPos=Prs.curPos;
+  tS=Simple.Statetime();
+  Serial.println(4);
+  Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
+  sB=lookForSerial();
+  Serial.println(sB);
+  Serial.println(millis()-cT);
+  if(Simple.Timeout(1000)) Simple.Set(S3_H,S3_B);
+  if(sB==49) Simple.Set(S1_H,S1_B);
+  if(sB==50) Simple.Set(S2_H,S2_B);
+  if(sB==51) Simple.Set(S3_H,S3_B);
 }
 
 
