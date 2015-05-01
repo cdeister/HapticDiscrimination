@@ -30,12 +30,13 @@ MouseRptParser  Prs;
 //**** My Crap
 int lFreq=2;
 int hFreq=400;
-int targPos=-2000;
-int tRange=-400;
+int targPos=2000;
+int tRange=800;
 long timeOffset;
 unsigned long tS;
 unsigned long cT;
 int lastKnownState=49;
+int invertRun=1;
 
 int lastPos;
 int mouseDelta;
@@ -59,9 +60,9 @@ void setup()
     Serial.begin(115200);
         if (Usb.Init() == -1)
         Serial.println("OSC did not start.");
-        //Serial.setTimeout(100);
+        Serial.setTimeout(100);
 
-    delay(200);
+    delay(1200);
     cT=millis();
     Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
@@ -106,7 +107,7 @@ State S1_B(){
   sB=lookForSerial();
   Serial.println(sB);
   Serial.println(millis()-cT);
-  if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
+  if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
@@ -206,12 +207,21 @@ void sin_texture(int pos, int freq)
 
 void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, int highFreq)
 {
-  if (pos < targetPos | pos > targetPos+targetRange){ 
-    sin_texture(pos, lowFreq);
+  if (invertRun==0){
+    if (pos < targetPos | pos > targetPos+targetRange){ 
+      sin_texture(pos, lowFreq);
+    }
+    else if (pos >= targetPos | pos <= targetPos+targetRange){
+      sin_texture(pos, highFreq);
+    }
   }
-  else if (pos >= targetPos | pos <= targetPos+targetRange){
-    sin_texture(pos, highFreq);
-  }  
+  else
+    if (pos > -1*targetPos | pos < -1*(targetPos+targetRange)){ 
+      sin_texture(pos, lowFreq);
+    }
+    else if (pos <= -1*targetPos | pos >= -1*(targetPos+targetRange)){
+      sin_texture(pos, highFreq);
+    }  
 }
 
 int moveTacker(int mov){
