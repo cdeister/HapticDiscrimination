@@ -10,12 +10,12 @@ numTrials=1;
 sensorCal=9000/9.5;  % in inches
 close all
 toPlot=1;
-p_fps=10; % doesn't keep up below 5, but loop is still good.
+p_fps=25; % doesn't keep up below 5, but loop is still good.
 
 %%
 clc;
 clear cS d i numSec p s s1 sB t t0 targetPos targetRange w
-numSec=60;
+numSec=240;
 s=[];
 p=[];
 d=[];
@@ -24,12 +24,12 @@ sB=[];
 tT=[];
 d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
 
-targetPos=6000;
-targetRange=600;
+targetPos=2000;
+targetRange=400;
 %pause(0.2)
 
 %%
-s1 = serial('/dev/cu.usbmodem1461');    % define serial port
+s1 = serial('/dev/cu.usbmodem1411');    % define serial port
 s1.BaudRate=115200;       % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
@@ -62,7 +62,7 @@ tCnt=1;
 figure(998)
 aPL = animatedline('Color',[0.1 0.1 0.1]);
 aSL=animatedline('Color',[0.8 0 0]);
-axis([0,numSec*1000,-(targetPos./sensorCal),(targetPos./sensorCal)*2])
+axis([0,numSec*1000,-(targetPos./sensorCal)*10,(targetPos./sensorCal)*10])
 hold all,plot([0 numSec*1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
 hold all,plot([0 numSec*1000],[(targetPos./sensorCal+targetRange./sensorCal) (targetPos./sensorCal+targetRange./sensorCal)],'g-')
 legend('pos.','state')
@@ -108,7 +108,8 @@ while ((tT/1000)<numSec)
             sB(i)=fscanf(s1,'%d');
             tT(i)=fscanf(s1,'%f');
             cS=s(i);
-            if t(i)>1000 && mean(abs(d(end-999:end)))<0.1
+            if t(i)>1000 && mean(abs(d(end-499:end)))<0.1
+        
                 fprintf(s1,'%u',2);
             else
             end
