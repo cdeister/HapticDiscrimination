@@ -28,10 +28,10 @@ HIDBoot<HID_PROTOCOL_MOUSE>    HidMouse(&Usb);
 MouseRptParser  Prs;
 
 //**** My Crap
-int lFreq=2;
-int hFreq=400;
-int targPos=-2000;
-int tRange=-400;
+int lFreq=25;
+int hFreq=10;
+int targPos=6000;
+int tRange=1000;
 long timeOffset;
 unsigned long tS;
 unsigned long cT;
@@ -46,8 +46,8 @@ int sB;
 # define s1pin 7
 # define s2pin 8
 # define s3pin 9
-# define texturePin 4
-# define texturePinG 3
+# define texturePin 5
+# define texturePinG 4
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -59,7 +59,7 @@ void setup()
     Serial.begin(115200);
         if (Usb.Init() == -1)
         Serial.println("OSC did not start.");
-        //Serial.setTimeout(100);
+        Serial.setTimeout(100);
 
     delay(200);
     cT=millis();
@@ -196,7 +196,7 @@ void sin_texture(int pos, int freq)
 {
   if (sin(2*pi*pos*freq)>0){
     digitalWrite(texturePin, HIGH);
-    digitalWrite(texturePinG, HIGH);
+    digitalWrite(texturePinG, LOW);
   } 
   else if (sin(2*pi*pos*freq)<=0){
     digitalWrite(texturePin, LOW);

@@ -10,7 +10,7 @@ numTrials=1;
 sensorCal=9000/9.5;  % in inches
 close all
 toPlot=1;
-p_fps=10; % doesn't keep up below 5, but loop is still good.
+p_fps=60;
 
 %%
 clc;
@@ -89,13 +89,12 @@ while ((tT/1000)<numSec)
             sB(i)=fscanf(s1,'%d');
             tT(i)=fscanf(s1,'%f');
             cS=s(i);
-            if t(i)>3000 && mean(abs(d(end-999:end)))<0.05
+            if t(i)>3000 && mean(abs(d(end-1999:end)))<0.1
+                fprintf(s1,'%u',3);
                 if ismember(p(i),targetPos:targetPos+targetRange)
                     bS=1;
-                    fprintf(s1,'%u',4);
                 else
                     bS=0;
-                    fprintf(s1,'%u',3);
                 end
             else
             end
@@ -112,19 +111,6 @@ while ((tT/1000)<numSec)
                 fprintf(s1,'%u',2);
             else
             end
-        case 4
-            i=i+1;
-            s(i)=fscanf(s1,'%d');
-            p(i)=fscanf(s1,'%d');       
-            d(i)=fscanf(s1,'%f');       
-            t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
-            cS=s(i);
-            if t(i)>1000
-                fprintf(s1,'%u',3);
-            else
-            end
     end
     if mod(i,p_fps)==0
         addpoints(aPL,tT(i),p(i)./sensorCal);
@@ -134,7 +120,7 @@ while ((tT/1000)<numSec)
             case 2
                 title(['state ' num2str(s(i))])
             case 1
-                title(['state ' num2str(s(i)) ' \color[rgb]{0 .5 .2}last trial = hit'])
+                title(['state ' num2str(s(i)) ' \color[rgb]{0 .8 .2}last trial = hit'])
             case 0
                 title(['state ' num2str(s(i)) ' \color{red}last trial = miss'])
         end
@@ -153,15 +139,15 @@ catch exception
     throw (exception);
 end    
 %%
-figure(88),plot(tT./1000,p./sensorCal,'k-')
-hold all,plot(tT./1000,s,'r-')
-hold all,plot(tT(2:end)./1000,smooth(diff(smooth(p,50))),'b-')
-hold all,plot([tT(1)./1000 tT(end)./1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
-hold all,plot([tT(1)./1000 tT(end)./1000],[(targetPos+targetRange)./sensorCal (targetPos+targetRange)./sensorCal],'g-')
-ylabel('Position,State and Delta')
-xlabel('Time (sec)')
-legend('pos','state','delta')
-ylim([-10 10])
+% figure(88),plot(tT./1000,p./sensorCal,'k-')
+% hold all,plot(tT./1000,s,'r-')
+% hold all,plot(tT(2:end)./1000,smooth(diff(smooth(p,50))),'b-')
+% hold all,plot([tT(1)./1000 tT(end)./1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
+% hold all,plot([tT(1)./1000 tT(end)./1000],[(targetPos+targetRange)./sensorCal (targetPos+targetRange)./sensorCal],'g-')
+% ylabel('Position,State and Delta')
+% xlabel('Time (sec)')
+% legend('pos','state','delta')
+% ylim([-10 10])
 
     
 
