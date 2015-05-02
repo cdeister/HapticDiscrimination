@@ -7,15 +7,17 @@
 
 %% clear data
 numTrials=1;
-sensorCal=9000/9.5;  % in inches
+sensorCal= 9000/9;  % in inches
 close all
 toPlot=1;
-p_fps=25; % doesn't keep up below 5, but loop is still good.
+p_fps=40; % doesn't keep up below 5, but loop is still good.
+invert=0;
+scaleGraph=10;
 
 %%
 clc;
 clear cS d i numSec p s s1 sB t t0 targetPos targetRange w
-numSec=240;
+numSec=80;
 s=[];
 p=[];
 d=[];
@@ -25,7 +27,7 @@ tT=[];
 d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
 
 targetPos=2000;
-targetRange=400;
+targetRange=800;
 %pause(0.2)
 
 %%
@@ -62,7 +64,7 @@ tCnt=1;
 figure(998)
 aPL = animatedline('Color',[0.1 0.1 0.1]);
 aSL=animatedline('Color',[0.8 0 0]);
-axis([0,numSec*1000,-(targetPos./sensorCal)*10,(targetPos./sensorCal)*10])
+axis([0,numSec*1000,-(abs(targetPos)./sensorCal)*scaleGraph,(abs(targetPos)./sensorCal)*scaleGraph])
 hold all,plot([0 numSec*1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
 hold all,plot([0 numSec*1000],[(targetPos./sensorCal+targetRange./sensorCal) (targetPos./sensorCal+targetRange./sensorCal)],'g-')
 legend('pos.','state')
@@ -90,13 +92,13 @@ while ((tT/1000)<numSec)
             tT(i)=fscanf(s1,'%f');
             cS=s(i);
             if t(i)>3000 && mean(abs(d(end-999:end)))<0.05
-                if ismember(p(i),targetPos:targetPos+targetRange)
-                    bS=1;
-                    fprintf(s1,'%u',4);
-                else
-                    bS=0;
-                    fprintf(s1,'%u',3);
-                end
+                    if ismember(p(i),targetPos:targetPos+targetRange)
+                        bS=1;
+                        fprintf(s1,'%u',4);
+                    else
+                        bS=0;
+                        fprintf(s1,'%u',3);
+                    end
             else
             end
         case 3
@@ -109,7 +111,6 @@ while ((tT/1000)<numSec)
             tT(i)=fscanf(s1,'%f');
             cS=s(i);
             if t(i)>1000 && mean(abs(d(end-499:end)))<0.1
-        
                 fprintf(s1,'%u',2);
             else
             end
@@ -122,10 +123,10 @@ while ((tT/1000)<numSec)
             sB(i)=fscanf(s1,'%d');
             tT(i)=fscanf(s1,'%f');
             cS=s(i);
-            if t(i)>1000
-                fprintf(s1,'%u',3);
-            else
-            end
+%             if t(i)>90000
+%                 fprintf(s1,'%u',3);
+%             else
+%            end
     end
     if mod(i,p_fps)==0
         addpoints(aPL,tT(i),p(i)./sensorCal);
