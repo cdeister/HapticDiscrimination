@@ -10,7 +10,7 @@ numTrials=1;
 sensorCal= 9000/9;  % in inches
 close all
 toPlot=1;
-p_fps=40; % doesn't keep up below 5, but loop is still good.
+p_fps=10; % doesn't keep up below 5, but loop is still good.
 invert=0;
 scaleGraph=10;
 
@@ -32,7 +32,7 @@ targetRange=800;
 
 %%
 s1 = serial('/dev/cu.usbmodem1411');    % define serial port
-s1.BaudRate=115200;       % define baud rate
+s1.BaudRate=9600;       % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
 %fprintf(s1,'%u',1);  % 1 is 49 in ascii

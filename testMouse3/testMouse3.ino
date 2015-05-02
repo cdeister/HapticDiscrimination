@@ -28,27 +28,28 @@ USB     Usb;
 USBHub  Hub(&Usb);
 HIDBoot<HID_PROTOCOL_MOUSE>    HidMouse(&Usb);
 MouseRptParser  Prs;
+int lastPos;
+int mouseDelta;
+int invertRun=0;
 
+//**** Servo Stuff
 Servo myservo;
+int rewardPos=17;
+int restPos=27;
 
-//**** My Crap
+//**** Other Vars
+long timeOffset;
+unsigned long tS;
+unsigned long beginTime;
+int lastKnownState=49;
+int sB;
+
+//**** Trial Stuff
 int lFreq=5;
 int hFreq=200;
 int targPos=2000;
 int tRange=800;
-long timeOffset;
-unsigned long tS;
-unsigned long cT;
-int lastKnownState=49;
-int invertRun=0;
-int rewardPos=17;
-int restPos=27;
-
-int lastPos;
-int mouseDelta;
 const float pi = 3.14;
-int sB;
-
 
 # define s1pin 7
 # define s2pin 8
@@ -64,19 +65,17 @@ SM Simple(S1_H, S1_B); // Trial State Machine
 void setup()
 {
     Serial.begin(115200);
-        if (Usb.Init() == -1)
-        Serial.println("OSC did not start.");
-        Serial.setTimeout(100);
-
-    delay(1200);
-    cT=millis();
+    if (Usb.Init() == -1)
+      Serial.println("OSC did not start.");
+    Serial.setTimeout(100);
+    delay(200);
+    beginTime=millis();
     Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     pinMode(s1pin, OUTPUT);
     pinMode(s2pin, OUTPUT);
     pinMode(s3pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
-    //pinMode(texturePinG,OUTPUT);
     digitalWrite(s3pin, LOW);
     digitalWrite(s2pin, LOW);
     digitalWrite(s1pin, LOW);
@@ -115,7 +114,7 @@ State S1_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  Serial.println(millis()-cT);
+  Serial.println(millis()-beginTime);
   if(Simple.Timeout(2000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
@@ -143,7 +142,7 @@ State S2_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  Serial.println(millis()-cT);
+  Serial.println(millis()-beginTime);
   if(Simple.Timeout(60000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
@@ -170,7 +169,7 @@ State S3_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  Serial.println(millis()-cT);
+  Serial.println(millis()-beginTime);
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
@@ -196,7 +195,7 @@ State S4_B(){
   Serial.println(tS);
   sB=lookForSerial();
   Serial.println(sB);
-  Serial.println(millis()-cT);
+  Serial.println(millis()-beginTime);
   //myservo.write(rewardPos);
   if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
 //  if(sB==49) Simple.Set(S1_H,S1_B);
@@ -236,28 +235,6 @@ void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, in
     else if (pos <= -1*targetPos | pos >= -1*(targetPos+targetRange)){
       sin_texture(pos, highFreq);
     }  
-}
-
-int moveTacker(int mov){
-  int rMov;
-  if (abs(mov)>0){
-    rMov=0;
-  }
-  else if (abs(mov)==0){
-    rMov=0;
-  }    
-  return rMov; 
-}
-
-int runTacker(int mov, int intPeriod){
-  int rMov;
-  if (abs(mov)>0){
-    rMov=0;
-  }
-  else if (abs(mov)==0){
-    rMov=0;
-  }    
-  return rMov; 
 }
 
 int lookForSerial(){
