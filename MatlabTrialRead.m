@@ -3,9 +3,9 @@
 % http://robotgrrl.com/blog/2010/01/15/arduino-to-matlab-read-in-sensor-data/
 % and also, http://www.arduino.cc/en/Tutorial/SerialCallResponse
 
-
+for k=1:3
 %% clear data
-clear all
+clearvars -except k data
 close all
 numTrials=1;
 sensorCal= 9000/9;  % in inches
@@ -43,14 +43,14 @@ fopen(s1);
 %pause(0.2)
 %%
 
-% try 
+try 
                          
 w=fscanf(s1,'%s');   % signal the arduino to start collection           
 % if (w=='A')
 %     display(['Collecting data']);
 %     fprintf(s1,'%s\n','A');     
 % end
-pause(1)   %<--- This has to be at leas 0.5 on my comp, or it will break. This indicates a buffer issue.
+pause(0.5)   %<--- This has to be at leas 0.5 on my comp, or it will break. This indicates a buffer issue.
 % State 1 always collects 187 points with 186 over ~300 ms then a 2 sec
 % delay. 
 
@@ -81,7 +81,7 @@ while ((tT/1000)<numSec)
             p(n)=fscanf(s1,'%d');       
             d(n)=fscanf(s1,'%f');       
             t(n)=fscanf(s1,'%f');
-            sB(n)=fscanf(s1,'%d'); 
+            % sB(n)=fscanf(s1,'%d'); 
             tT(n)=fscanf(s1,'%f');
             tC=fscanf(s1,'%d');
             cP(n)=fscanf(s1,'%d');
@@ -93,7 +93,7 @@ while ((tT/1000)<numSec)
             p(n)=fscanf(s1,'%d');       
             d(n)=fscanf(s1,'%f');       
             t(n)=fscanf(s1,'%f');
-            sB(n)=fscanf(s1,'%d');
+            % sB(n)=fscanf(s1,'%d');
             tT(n)=fscanf(s1,'%f');
             tC=fscanf(s1,'%d');
             cP(n)=fscanf(s1,'%d');
@@ -115,7 +115,7 @@ while ((tT/1000)<numSec)
             p(n)=fscanf(s1,'%d');       
             d(n)=fscanf(s1,'%f');       
             t(n)=fscanf(s1,'%f');
-            sB(n)=fscanf(s1,'%d');
+            % sB(n)=fscanf(s1,'%d');
             tT(n)=fscanf(s1,'%f');
             tC=fscanf(s1,'%d');
             cP(n)=fscanf(s1,'%d');
@@ -131,7 +131,7 @@ while ((tT/1000)<numSec)
             p(n)=fscanf(s1,'%d');       
             d(n)=fscanf(s1,'%f');       
             t(n)=fscanf(s1,'%f');
-            sB(n)=fscanf(s1,'%d');
+            % sB(n)=fscanf(s1,'%d');
             tT(n)=fscanf(s1,'%f');
             tC=fscanf(s1,'%d');
             cP(n)=fscanf(s1,'%d');
@@ -161,22 +161,31 @@ end
 fprintf(s1,'%u',3);
 fclose(s1);
 
-% catch exception
-%     fclose(s1);                 
-%     throw (exception);
-% end
+catch exception
+    fclose(s1);                 
+    throw (exception);
+end
+data.s{k}=s;
+data.p{k}=p;
+data.d{k}=d;
+data.t{k}=t;
+data.tT{k}=tT;
+data.tC{k}=tC;
+data.cP{k}=cP;
+data.cR{k}=cR;
+end
 
 
-%% Plot Summary
-figure(88),plot(tT./1000,p./sensorCal,'k-')
-hold all,plot(tT./1000,s,'r-')
-hold all,plot(tT(2:end)./1000,smooth(diff(smooth(p,50))),'b-')
-hold all,plot(tT./1000,cP./sensorCal,'m-')
-hold all,plot(tT./1000,(cP+cR)./sensorCal,'m-')
-ylabel('Position,State and Delta')
-xlabel('Time (sec)')
-legend('pos','state','delta')
-ylim([-10 10])
+% %% Plot Summary
+% figure(88),plot(tT./1000,p./sensorCal,'k-')
+% hold all,plot(tT./1000,s,'r-')
+% hold all,plot(tT(2:end)./1000,smooth(diff(smooth(p,50))),'b-')
+% hold all,plot(tT./1000,cP./sensorCal,'m-')
+% hold all,plot(tT./1000,(cP+cR)./sensorCal,'m-')
+% ylabel('Position,State and Delta')
+% xlabel('Time (sec)')
+% legend('pos','state','delta')
+% ylim([-10 10])
 
     
 

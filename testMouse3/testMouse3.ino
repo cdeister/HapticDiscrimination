@@ -75,7 +75,7 @@ void setup()
 //    }
     if (Usb.Init() == -1)
       Serial.println("OSC did not start.");
-   // Serial.setTimeout(100);
+    Serial.setTimeout(100);
     delay(200);
     beginTime=millis();
     Serial.println("Start"); 
@@ -122,12 +122,12 @@ State S1_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
+  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
   Serial.println(tRange);
-  if(Simple.Timeout(3000)) Simple.Set(S2_H,S2_B);
+  if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
@@ -153,7 +153,7 @@ State S2_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
+  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
@@ -185,7 +185,7 @@ State S3_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
+  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
@@ -214,7 +214,7 @@ State S4_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
+  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
