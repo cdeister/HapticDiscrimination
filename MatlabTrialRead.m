@@ -1,60 +1,63 @@
-% Largley Folowing robot grrl tutorial:
+
+% Serial com mostly from robot grrl tutorial:
 % http://robotgrrl.com/blog/2010/01/15/arduino-to-matlab-read-in-sensor-data/
 % and also, http://www.arduino.cc/en/Tutorial/SerialCallResponse
 
-% TODO: write collect data function to clean up default state. lots of
-% repate code
 
 %% clear data
+clear all
+close all
 numTrials=1;
 sensorCal= 9000/9;  % in inches
-close all
 toPlot=1;
-p_fps=10; % doesn't keep up below 5, but loop is still good.
+p_fps=20; % doesn't keep up below 5, but loop is still good.
 invert=0;
-scaleGraph=10;
+yRange=[-1,5];
 
 %%
 clc;
-clear cS d i numSec p s s1 sB t t0 targetPos targetRange w
-numSec=80;
+numSec=600;
 s=[];
 p=[];
 d=[];
 t=[];
 sB=[];
 tT=[];
-d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
+tC=[];
+cP=[];
+cR=[];
+%d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
 
-targetPos=2000;
-targetRange=800;
+targetPos=700;
+targetRange=200;
 %pause(0.2)
+cP(1)=targetPos;
+cR(1)=targetRange;
 
 %%
-s1 = serial('/dev/cu.usbmodem1411');    % define serial port
-s1.BaudRate=9600;       % define baud rate
+s1 = serial('/dev/cu.usbmodem1421');    % define serial port
+s1.BaudRate=115200;       % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
 %fprintf(s1,'%u',1);  % 1 is 49 in ascii
 %pause(0.2)
 %%
 
-try                             % use try catch to ensure fclose
-                                % signal the arduino to start collection
-w=fscanf(s1,'%s');              % must define the input % d or %s, etc.
+% try 
+                         
+w=fscanf(s1,'%s');   % signal the arduino to start collection           
 % if (w=='A')
 %     display(['Collecting data']);
-%     fprintf(s1,'%s\n','A');     % establishContact just wants 
-%                                 % something in the buffer
+%     fprintf(s1,'%s\n','A');     
 % end
-pause(0.5)   %<--- This has to be at leas 0.5 on my comp, or it will break. This indicates a buffer issue.
+pause(1)   %<--- This has to be at leas 0.5 on my comp, or it will break. This indicates a buffer issue.
 % State 1 always collects 187 points with 186 over ~300 ms then a 2 sec
 % delay. 
 
 fprintf(s1,'%u',1);  % 1 is 49 in ascii
 
 cS=1;
-i=0;
+n=0;
 t0=tic;
 tT(1)=0;
 bS=2;
@@ -64,9 +67,8 @@ tCnt=1;
 figure(998)
 aPL = animatedline('Color',[0.1 0.1 0.1]);
 aSL=animatedline('Color',[0.8 0 0]);
-axis([0,numSec*1000,-(abs(targetPos)./sensorCal)*scaleGraph,(abs(targetPos)./sensorCal)*scaleGraph])
-hold all,plot([0 numSec*1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
-hold all,plot([0 numSec*1000],[(targetPos./sensorCal+targetRange./sensorCal) (targetPos./sensorCal+targetRange./sensorCal)],'g-')
+aSP=animatedline('Color',[0.8 0 0.6]);
+axis([0,numSec*1000,yRange(1),yRange(2)])
 legend('pos.','state')
 
 % --- main block
@@ -74,25 +76,31 @@ legend('pos.','state')
 while ((tT/1000)<numSec)    
     switch(cS)
         case 1
-            i=i+1;
-            s(i)=fscanf(s1,'%d');
-            p(i)=fscanf(s1,'%d');       
-            d(i)=fscanf(s1,'%f');       
-            t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d'); 
-            tT(i)=fscanf(s1,'%f');
-            cS=s(i);
+            n=n+1;
+            s(n)=fscanf(s1,'%d');
+            p(n)=fscanf(s1,'%d');       
+            d(n)=fscanf(s1,'%f');       
+            t(n)=fscanf(s1,'%f');
+            sB(n)=fscanf(s1,'%d'); 
+            tT(n)=fscanf(s1,'%f');
+            tC=fscanf(s1,'%d');
+            cP(n)=fscanf(s1,'%d');
+            cR(n)=fscanf(s1,'%d');
+            cS=s(n);
         case 2
-            i=i+1;
-            s(i)=fscanf(s1,'%d');
-            p(i)=fscanf(s1,'%d');       
-            d(i)=fscanf(s1,'%f');       
-            t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
-            cS=s(i);
-            if t(i)>3000 && mean(abs(d(end-999:end)))<0.05
-                    if ismember(p(i),targetPos:targetPos+targetRange)
+            n=n+1;
+            s(n)=fscanf(s1,'%d');
+            p(n)=fscanf(s1,'%d');       
+            d(n)=fscanf(s1,'%f');       
+            t(n)=fscanf(s1,'%f');
+            sB(n)=fscanf(s1,'%d');
+            tT(n)=fscanf(s1,'%f');
+            tC=fscanf(s1,'%d');
+            cP(n)=fscanf(s1,'%d');
+            cR(n)=fscanf(s1,'%d');
+            cS=s(n);
+            if t(n)>3000 && mean(abs(d(end-499:end)))<0.1
+                    if ismember(p(n),cP(end):cP(end)+cR(end))
                         bS=1;
                         fprintf(s1,'%u',4);
                     else
@@ -102,43 +110,46 @@ while ((tT/1000)<numSec)
             else
             end
         case 3
-            i=i+1;
-            s(i)=fscanf(s1,'%d');
-            p(i)=fscanf(s1,'%d');       
-            d(i)=fscanf(s1,'%f');       
-            t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
-            cS=s(i);
-            if t(i)>1000 && mean(abs(d(end-499:end)))<0.1
+            n=n+1;
+            s(n)=fscanf(s1,'%d');
+            p(n)=fscanf(s1,'%d');       
+            d(n)=fscanf(s1,'%f');       
+            t(n)=fscanf(s1,'%f');
+            sB(n)=fscanf(s1,'%d');
+            tT(n)=fscanf(s1,'%f');
+            tC=fscanf(s1,'%d');
+            cP(n)=fscanf(s1,'%d');
+            cR(n)=fscanf(s1,'%d');
+            cS=s(n);
+            if t(n)>1000 && mean(abs(d(end-499:end)))<0.1
                 fprintf(s1,'%u',2);
             else
             end
         case 4
-            i=i+1;
-            s(i)=fscanf(s1,'%d');
-            p(i)=fscanf(s1,'%d');       
-            d(i)=fscanf(s1,'%f');       
-            t(i)=fscanf(s1,'%f');
-            sB(i)=fscanf(s1,'%d');
-            tT(i)=fscanf(s1,'%f');
-            cS=s(i);
-%             if t(i)>90000
-%                 fprintf(s1,'%u',3);
-%             else
-%            end
+            n=n+1;
+            s(n)=fscanf(s1,'%d');
+            p(n)=fscanf(s1,'%d');       
+            d(n)=fscanf(s1,'%f');       
+            t(n)=fscanf(s1,'%f');
+            sB(n)=fscanf(s1,'%d');
+            tT(n)=fscanf(s1,'%f');
+            tC=fscanf(s1,'%d');
+            cP(n)=fscanf(s1,'%d');
+            cR(n)=fscanf(s1,'%d');
+            cS=s(n);
     end
-    if mod(i,p_fps)==0
-        addpoints(aPL,tT(i),p(i)./sensorCal);
-        addpoints(aSL,tT(i),s(i));
+    if mod(n,p_fps)==0
+        addpoints(aPL,tT(n),p(n)./sensorCal);
+        addpoints(aSL,tT(n),s(n));
+        addpoints(aSP,tT(n),cP(n)./sensorCal);
         drawnow
         switch(bS)
             case 2
-                title(['state ' num2str(s(i))])
+                title(['trial# ' num2str(tC(end)) ' & state ' num2str(s(n))])
             case 1
-                title(['state ' num2str(s(i)) ' \color[rgb]{0 .5 .2}last trial = hit'])
+                title(['trial# ' num2str(tC(end)) ' & state ' num2str(s(n)) ' \color[rgb]{0 .5 .2}last trial = hit'])
             case 0
-                title(['state ' num2str(s(i)) ' \color{red}last trial = miss'])
+                title(['trial# ' num2str(tC(end)) ' & state ' num2str(s(n)) ' \color{red}last trial = miss'])
         end
         
     else
@@ -150,16 +161,18 @@ end
 fprintf(s1,'%u',3);
 fclose(s1);
 
-catch exception
-    fclose(s1);                 
-    throw (exception);
-end    
-%%
+% catch exception
+%     fclose(s1);                 
+%     throw (exception);
+% end
+
+
+%% Plot Summary
 figure(88),plot(tT./1000,p./sensorCal,'k-')
 hold all,plot(tT./1000,s,'r-')
 hold all,plot(tT(2:end)./1000,smooth(diff(smooth(p,50))),'b-')
-hold all,plot([tT(1)./1000 tT(end)./1000],[targetPos./sensorCal targetPos./sensorCal],'g-')
-hold all,plot([tT(1)./1000 tT(end)./1000],[(targetPos+targetRange)./sensorCal (targetPos+targetRange)./sensorCal],'g-')
+hold all,plot(tT./1000,cP./sensorCal,'m-')
+hold all,plot(tT./1000,(cP+cR)./sensorCal,'m-')
 ylabel('Position,State and Delta')
 xlabel('Time (sec)')
 legend('pos','state','delta')

@@ -35,8 +35,7 @@ int invertRun=0;
 //**** Servo Stuff
 Servo myservo;
 int rewardPos=17;
-int restPos=127;
-//random(min, max)
+int restPos=27;
 
 //**** Other Vars
 long timeOffset;
@@ -48,18 +47,14 @@ int sB;
 //**** Trial Stuff
 int lFreq=5;
 int hFreq=200;
-int targPos=400;
-int tRange=200;
+int targPos=2000;
+int tRange=800;
 const float pi = 3.14;
-int tCount=1;
-int tPoss[500];
-int lowPos=200;
-int highPos=2000;
 
-# define rPin 6
-# define gPin 5
-# define bPin 3
-# define texturePin 7
+# define s1pin 7
+# define s2pin 8
+# define s3pin 9
+# define texturePin 4
 # define servoPin 9
 
 SM Simple(S1_H, S1_B); // Trial State Machine
@@ -69,27 +64,26 @@ SM Simple(S1_H, S1_B); // Trial State Machine
 
 void setup()
 {
-    Serial.begin(115200);
-//    while (!Serial) {
-//      ; // wait for serial port to connect. Needed for Leonardo only
-//    }
+    Serial1.begin(115200);
+    while (!Serial) {
+      ; // wait for serial port to connect. Needed for Leonardo only
+    }
     if (Usb.Init() == -1)
-      Serial.println("OSC did not start.");
-   // Serial.setTimeout(100);
+      Serial1.println("OSC did not start.");
+    Serial1.setTimeout(100);
     delay(200);
     beginTime=millis();
-    Serial.println("Start"); 
+    Serial1.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
-    pinMode(rPin, OUTPUT);
-    pinMode(gPin, OUTPUT);
-    pinMode(bPin, OUTPUT);
+    pinMode(s1pin, OUTPUT);
+    pinMode(s2pin, OUTPUT);
+    pinMode(s3pin, OUTPUT);
     pinMode(texturePin,OUTPUT);
-    digitalWrite(rPin, HIGH);
-    digitalWrite(gPin, HIGH);
-    digitalWrite(bPin, HIGH);
+    digitalWrite(s3pin, LOW);
+    digitalWrite(s2pin, LOW);
+    digitalWrite(s1pin, LOW);
     myservo.attach(servoPin);
     myservo.write(restPos); 
-    randomSeed(analogRead(0));
     sB=49;
 }
 
@@ -103,9 +97,9 @@ void loop()
 //------------ State Definitions
 
 State S1_H(){
-  digitalWrite(rPin, LOW);
-  digitalWrite(gPin, HIGH);
-  digitalWrite(bPin, LOW);
+  digitalWrite(s1pin, HIGH);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, LOW);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=49;
@@ -117,24 +111,21 @@ State S1_B(){
   mouseDelta=Prs.curPos-lastPos;;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
-  Serial.println(1);
-  Serial.println(Prs.curPos);
-  Serial.println(mouseDelta);
-  Serial.println(tS);
+  Serial1.println(1);
+  Serial1.println(Prs.curPos);
+  Serial1.println(mouseDelta);
+  Serial1.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
-  Serial.println(millis()-beginTime);
-  Serial.println(tCount);
-  Serial.println(targPos);
-  Serial.println(tRange);
-  if(Simple.Timeout(3000)) Simple.Set(S2_H,S2_B);
+  Serial1.println(sB);
+  Serial1.println(millis()-beginTime);
+  if(Simple.Timeout(2000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
 State S2_H(){
-  digitalWrite(rPin, HIGH);
-  digitalWrite(gPin, LOW);
-  digitalWrite(bPin, HIGH);
+  digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, HIGH);
+  digitalWrite(s3pin, LOW);
   //myservo.write(restPos);
   lastPos=Prs.curPos;
   Prs.curPos=0;
@@ -148,16 +139,13 @@ State S2_B(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
-  Serial.println(2);
-  Serial.println(Prs.curPos);
-  Serial.println(mouseDelta);
-  Serial.println(tS);
+  Serial1.println(2);
+  Serial1.println(Prs.curPos);
+  Serial1.println(mouseDelta);
+  Serial1.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
-  Serial.println(millis()-beginTime);
-  Serial.println(tCount);
-  Serial.println(targPos);
-  Serial.println(tRange);
+  Serial1.println(sB);
+  Serial1.println(millis()-beginTime);
   if(Simple.Timeout(60000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
@@ -165,40 +153,35 @@ State S2_B(){
 }
 
 State S3_H(){
-  digitalWrite(rPin, LOW);
-  digitalWrite(gPin, HIGH);
-  digitalWrite(bPin, HIGH);
+  digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, HIGH);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=51;
   myservo.write(restPos);
-  tCount=tCount+1;
-  targPos=random(lowPos, highPos);
 }
 
 State S3_B(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
-  Serial.println(3);
-  Serial.println(Prs.curPos);
-  Serial.println(mouseDelta);
-  Serial.println(tS);
+  Serial1.println(3);
+  Serial1.println(Prs.curPos);
+  Serial1.println(mouseDelta);
+  Serial1.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
-  Serial.println(millis()-beginTime);
-  Serial.println(tCount);
-  Serial.println(targPos);
-  Serial.println(tRange);
+  Serial1.println(sB);
+  Serial1.println(millis()-beginTime);
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
 State S4_H(){
-  digitalWrite(rPin, HIGH);
-  digitalWrite(gPin, HIGH);
-  digitalWrite(bPin, LOW);
+  digitalWrite(s1pin, LOW);
+  digitalWrite(s2pin, LOW);
+  digitalWrite(s3pin, LOW);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=52; 
@@ -209,16 +192,13 @@ State S4_B(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
-  Serial.println(4);
-  Serial.println(Prs.curPos);
-  Serial.println(mouseDelta);
-  Serial.println(tS);
+  Serial1.println(4);
+  Serial1.println(Prs.curPos);
+  Serial1.println(mouseDelta);
+  Serial1.println(tS);
   sB=lookForSerial();
-  Serial.println(sB);
-  Serial.println(millis()-beginTime);
-  Serial.println(tCount);
-  Serial.println(targPos);
-  Serial.println(tRange);
+  Serial1.println(sB);
+  Serial1.println(millis()-beginTime);
   //myservo.write(rewardPos);
   if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
 //  if(sB==49) Simple.Set(S1_H,S1_B);
@@ -262,11 +242,11 @@ void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, in
 
 int lookForSerial(){
   int saBit;
-  if(Serial.available()>0){
-      saBit=Serial.read();
+  if(Serial1.available()>0){
+      saBit=Serial1.read();
       lastKnownState=saBit;
   }
-  else if(Serial.available()<=0){
+  else if(Serial1.available()<=0){
     saBit=lastKnownState;
   }
   return saBit;
