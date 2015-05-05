@@ -3,7 +3,7 @@
 % http://robotgrrl.com/blog/2010/01/15/arduino-to-matlab-read-in-sensor-data/
 % and also, http://www.arduino.cc/en/Tutorial/SerialCallResponse
 
-for k=1:3
+for k=1:5
 %% clear data
 clearvars -except k data
 close all
@@ -12,11 +12,11 @@ sensorCal= 9000/9;  % in inches
 toPlot=1;
 p_fps=20; % doesn't keep up below 5, but loop is still good.
 invert=0;
-yRange=[-1,5];
+yRange=[-5,45];
 
 %%
 clc;
-numSec=600;
+numSec=300;
 s=[];
 p=[];
 d=[];
@@ -26,16 +26,16 @@ tT=[];
 tC=[];
 cP=[];
 cR=[];
-%d(1:1000)=10;  % KLUDGE: This is just to make sure we initialize the running condition.
+d(1:200)=100;  % KLUDGE: This is just to make sure we initialize the running condition.
 
 targetPos=700;
-targetRange=200;
+targetRange=350;
 %pause(0.2)
 cP(1)=targetPos;
 cR(1)=targetRange;
 
 %%
-s1 = serial('/dev/cu.usbmodem1421');    % define serial port
+s1 = serial('/dev/cu.usbmodem1411');    % define serial port
 s1.BaudRate=115200;       % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
@@ -43,7 +43,7 @@ fopen(s1);
 %pause(0.2)
 %%
 
-try 
+% try 
                          
 w=fscanf(s1,'%s');   % signal the arduino to start collection           
 % if (w=='A')
@@ -99,14 +99,24 @@ while ((tT/1000)<numSec)
             cP(n)=fscanf(s1,'%d');
             cR(n)=fscanf(s1,'%d');
             cS=s(n);
-            if t(n)>3000 && mean(abs(d(end-499:end)))<0.1
-                    if ismember(p(n),cP(end):cP(end)+cR(end))
+            if t(n)>1000 && mean(abs(d(end-199:end)))<10
+                if invert==1
+                    if p(n)<cP(end)+cR(end)
                         bS=1;
                         fprintf(s1,'%u',4);
                     else
                         bS=0;
                         fprintf(s1,'%u',3);
                     end
+                elseif invert==0
+                    if p(n)>cP(end)+cR(end) %ismember(p(n),cP(end):cP(end)+cR(end))
+                        bS=1;
+                        fprintf(s1,'%u',4);
+                    else
+                        bS=0;
+                        fprintf(s1,'%u',3);
+                    end
+                end
             else
             end
         case 3
@@ -121,7 +131,7 @@ while ((tT/1000)<numSec)
             cP(n)=fscanf(s1,'%d');
             cR(n)=fscanf(s1,'%d');
             cS=s(n);
-            if t(n)>1000 && mean(abs(d(end-499:end)))<0.1
+            if t(n)>1000 && mean(abs(d(end-199:end)))<10
                 fprintf(s1,'%u',2);
             else
             end
@@ -140,7 +150,7 @@ while ((tT/1000)<numSec)
     end
     if mod(n,p_fps)==0
         addpoints(aPL,tT(n),p(n)./sensorCal);
-        addpoints(aSL,tT(n),s(n));
+        addpoints(aSL,tT(n),mean(abs(d(end-99:end))));
         addpoints(aSP,tT(n),cP(n)./sensorCal);
         drawnow
         switch(bS)
@@ -158,13 +168,14 @@ end
     
 
 
-fprintf(s1,'%u',3);
+fprintf(s1,'%u',5);  % Pause State (no serial)
 fclose(s1);
 
-catch exception
-    fclose(s1);                 
-    throw (exception);
-end
+% catch exception
+%     fclose(s1);                 
+%     throw (exception);
+% end
+
 data.s{k}=s;
 data.p{k}=p;
 data.d{k}=d;
@@ -174,6 +185,13 @@ data.tC{k}=tC;
 data.cP{k}=cP;
 data.cR{k}=cR;
 end
+
+%% save data
+tic
+exportPath='~/Desktop/';
+save([exportPath 'jv16_a.mat'],'data','-v7.3')
+toc
+
 
 
 % %% Plot Summary

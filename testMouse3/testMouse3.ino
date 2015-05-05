@@ -35,7 +35,7 @@ int invertRun=0;
 //**** Servo Stuff
 Servo myservo;
 int rewardPos=17;
-int restPos=127;
+int restPos=27;
 //random(min, max)
 
 //**** Other Vars
@@ -46,19 +46,20 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Stuff
-int lFreq=5;
-int hFreq=200;
-int targPos=400;
-int tRange=200;
+int lFreq=2;
+int hFreq=10;
+int targPos=1000;
+int tRange=1000;
+int tRangeE;
 const float pi = 3.14;
 int tCount=1;
-int tPoss[500];
-int lowPos=200;
-int highPos=2000;
+int lowPos=2000;
+int highPos=9000;
+int rewardTime=2000;
 
-# define rPin 6
+# define rPin 3
 # define gPin 5
-# define bPin 3
+# define bPin 6
 # define texturePin 7
 # define servoPin 9
 
@@ -91,6 +92,12 @@ void setup()
     myservo.write(restPos); 
     randomSeed(analogRead(0));
     sB=49;
+    if (invertRun==1){
+      tRangeE=-1*tRange;
+    }
+    else {
+      tRangeE=tRange;
+    }
 }
 
 void loop()
@@ -126,7 +133,7 @@ State S1_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRange);
+  Serial.println(tRangeE);
   if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
@@ -157,7 +164,7 @@ State S2_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRange);
+  Serial.println(tRangeE);
   if(Simple.Timeout(60000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
@@ -173,7 +180,12 @@ State S3_H(){
   lastKnownState=51;
   myservo.write(restPos);
   tCount=tCount+1;
-  targPos=random(lowPos, highPos);
+  if (invertRun==1){
+    targPos=-1*random(lowPos, highPos);
+  }
+  else {
+    targPos=random(lowPos, highPos);
+  }
 }
 
 State S3_B(){
@@ -189,7 +201,7 @@ State S3_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRange);
+  Serial.println(tRangeE);
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
@@ -218,12 +230,31 @@ State S4_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRange);
+  Serial.println(tRangeE);
   //myservo.write(rewardPos);
-  if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
+  if(Simple.Timeout(rewardTime))  Simple.Set(S3_H,S3_B);
 //  if(sB==49) Simple.Set(S1_H,S1_B);
 //  if(sB==50)  myservo.write(restPos); Simple.Set(S2_H,S2_B);
 //  if(sB==51) myservo.write(restPos); Simple.Set(S3_H,S3_B);
+}
+
+State S5_H(){
+  digitalWrite(rPin, HIGH);
+  digitalWrite(gPin, LOW);
+  digitalWrite(bPin, LOW);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=53;
+  Serial.flush(); 
+}
+
+State S5_B(){
+  tS=Simple.Statetime();
+  sB=lookForSerial();
+  if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
+  if(sB==49) Simple.Set(S1_H,S1_B);
+  if(sB==50) Simple.Set(S2_H,S2_B);
+  if(sB==51) Simple.Set(S3_H,S3_B);
 }
 
 
@@ -252,10 +283,10 @@ void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, in
     }
   }
   else
-    if (pos > -1*targetPos | pos < -1*(targetPos+targetRange)){ 
+    if (pos > targetPos | pos < (targetPos-targetRange)){ 
       sin_texture(pos, lowFreq);
     }
-    else if (pos <= -1*targetPos | pos >= -1*(targetPos+targetRange)){
+    else if (pos <= targetPos | pos >= (targetPos-targetRange)){
       sin_texture(pos, highFreq);
     }  
 }
