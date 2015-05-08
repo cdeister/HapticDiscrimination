@@ -30,13 +30,11 @@ HIDBoot<HID_PROTOCOL_MOUSE>    HidMouse(&Usb);
 MouseRptParser  Prs;
 int lastPos;
 int mouseDelta;
-int invertRun=0;
 
 //**** Servo Stuff
 Servo myservo;
-int rewardPos=17;
-int restPos=27;
-//random(min, max)
+int rewardPos=19;
+int restPos=26;
 
 //**** Other Vars
 long timeOffset;
@@ -46,22 +44,35 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Stuff
-int lFreq=2;
-int hFreq=10;
-int targPos=1000;
-int tRange=1000;
-int tRangeE;
+long lFreq[]={700,2000};
+int lRand=0;
+int rRand=1;
+int clickTime=1000;  // in microseconds
+long clickPosL;
+long clickPosR;
+int clickDeltaL;
+int clickDeltaR;
+int clickLBool;
+int clickRBool;
+
+long tRange=90000;
+long tRangeE;
+long targPos=10000;
 const float pi = 3.14;
 int tCount=1;
-int lowPos=2000;
-int highPos=9000;
-int rewardTime=2000;
+long lowPos=10000;
+long highPos=60000;
+int rewardTime=2000;  // in ms
+int solenoidTime=50;  // in ms
 
-# define rPin 3
+
+# define rPin 6
 # define gPin 5
-# define bPin 6
-# define texturePin 7
+# define bPin 3
+# define clickPinL 7
+# define clickPinR 8
 # define servoPin 9
+# define solenoidPin 12
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -71,33 +82,34 @@ SM Simple(S1_H, S1_B); // Trial State Machine
 void setup()
 {
     Serial.begin(115200);
-//    while (!Serial) {
-//      ; // wait for serial port to connect. Needed for Leonardo only
-//    }
     if (Usb.Init() == -1)
       Serial.println("OSC did not start.");
     Serial.setTimeout(100);
     delay(200);
+    
     beginTime=millis();
     Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
+    
     pinMode(rPin, OUTPUT);
     pinMode(gPin, OUTPUT);
     pinMode(bPin, OUTPUT);
-    pinMode(texturePin,OUTPUT);
+    pinMode(clickPinL,OUTPUT);
+    pinMode(clickPinR,OUTPUT);
+    pinMode(solenoidPin,OUTPUT);
+    
     digitalWrite(rPin, HIGH);
     digitalWrite(gPin, HIGH);
     digitalWrite(bPin, HIGH);
+    digitalWrite(clickPinL, LOW);
+    digitalWrite(clickPinR, LOW);
+    digitalWrite(solenoidPin,LOW);
+    
     myservo.attach(servoPin);
     myservo.write(restPos); 
+    
     randomSeed(analogRead(0));
     sB=49;
-    if (invertRun==1){
-      tRangeE=-1*tRange;
-    }
-    else {
-      tRangeE=tRange;
-    }
 }
 
 void loop()
@@ -116,12 +128,11 @@ State S1_H(){
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=49;
-  //myservo.write(restPos);
 }
 
 
 State S1_B(){ 
-  mouseDelta=Prs.curPos-lastPos;;
+  mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
   Serial.println(1);
@@ -129,12 +140,15 @@ State S1_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
   Serial.println(tRangeE);
-  if(Simple.Timeout(6000)) Simple.Set(S2_H,S2_B);
+  Serial.println(clickLBool);
+  Serial.println(clickRBool);
+  Serial.println(lFreq[lRand]);
+  Serial.println(lFreq[rRand]);
+  if(Simple.Timeout(3000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
 }
 
@@ -142,29 +156,57 @@ State S2_H(){
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, LOW);
   digitalWrite(bPin, HIGH);
-  //myservo.write(restPos);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=50;
-  // myservo.write(restPos);
+  clickDeltaL=0;
+  clickDeltaR=0;
 }
 
 State S2_B(){
-  //sin_texture(Prs.curPos,lFreq);
-  burriedSin_texture(Prs.curPos, targPos, tRange, lFreq, hFreq);
-  mouseDelta=Prs.curPos-lastPos;
-  lastPos=Prs.curPos;
+    mouseDelta=Prs.curPos-lastPos;
+    lastPos=Prs.curPos;
+    clickDeltaL=clickDeltaL+abs(mouseDelta);
+    clickDeltaR=clickDeltaR+abs(mouseDelta);
+   
+   if (clickDeltaL >= clickPosL){
+    digitalWrite(clickPinL,HIGH);
+    delayMicroseconds(clickTime);
+    digitalWrite(clickPinL,LOW);
+    clickPosL=getNextClickTarget(Prs.curPos, targPos, tRange, lFreq[lRand], lFreq[rRand]);
+    clickDeltaL=0;
+    clickLBool=1;
+   }
+   else if (clickDeltaL < clickPosL) {
+     clickLBool=0;
+   }
+   
+   if (clickDeltaR >= clickPosR){
+     digitalWrite(clickPinR,HIGH);
+     delayMicroseconds(clickTime);
+     digitalWrite(clickPinR,LOW);
+     clickPosR=getNextClickTarget(Prs.curPos, targPos, tRange, lFreq[rRand], lFreq[lRand]);
+     clickDeltaR=0;
+     clickRBool=1;
+   }
+   else if (clickDeltaR < clickPosR) {
+     clickRBool=0;
+   }
+  
   tS=Simple.Statetime();
   Serial.println(2);
   Serial.println(Prs.curPos);
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
   Serial.println(tRangeE);
+  Serial.println(clickLBool);
+  Serial.println(clickRBool);
+  Serial.println(lFreq[lRand]);
+  Serial.println(lFreq[rRand]);
   if(Simple.Timeout(60000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
@@ -180,12 +222,10 @@ State S3_H(){
   lastKnownState=51;
   myservo.write(restPos);
   tCount=tCount+1;
-  if (invertRun==1){
-    targPos=-1*random(lowPos, highPos);
-  }
-  else {
-    targPos=random(lowPos, highPos);
-  }
+  targPos=random(lowPos, highPos);
+  lRand=int(random(0,2));
+  rRand=1-lRand;
+  lastPos=Prs.curPos;  
 }
 
 State S3_B(){
@@ -197,11 +237,14 @@ State S3_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
   Serial.println(tRangeE);
+  Serial.println(clickLBool);
+  Serial.println(clickRBool);
+  Serial.println(lFreq[lRand]);
+  Serial.println(lFreq[rRand]);
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
@@ -215,6 +258,7 @@ State S4_H(){
   Prs.curPos=0;
   lastKnownState=52; 
   myservo.write(rewardPos);
+  digitalWrite(solenoidPin, HIGH);
 }
 
 State S4_B(){
@@ -226,12 +270,17 @@ State S4_B(){
   Serial.println(mouseDelta);
   Serial.println(tS);
   sB=lookForSerial();
-  //Serial.println(sB);
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
   Serial.println(tRangeE);
-  //myservo.write(rewardPos);
+  Serial.println(clickLBool);
+  Serial.println(clickRBool);
+  Serial.println(lFreq[lRand]);
+  Serial.println(lFreq[rRand]);
+  if (tS>solenoidTime){
+    digitalWrite(solenoidPin,LOW);
+  }
   if(Simple.Timeout(rewardTime))  Simple.Set(S3_H,S3_B);
 //  if(sB==49) Simple.Set(S1_H,S1_B);
 //  if(sB==50)  myservo.write(restPos); Simple.Set(S2_H,S2_B);
@@ -260,36 +309,36 @@ State S5_B(){
 
 // ---------- Helper Functions
 
-void sin_texture(int pos, int freq)
-{
-  if (sin(2*pi*pos*freq)>0){
-    digitalWrite(texturePin, HIGH);
-    //digitalWrite(texturePinG, HIGH);
-  } 
-  else if (sin(2*pi*pos*freq)<=0){
-    digitalWrite(texturePin, LOW);
-    //digitalWrite(texturePinG, LOW);
-  }          
-}
+//void sin_texture(int pos, int freq)
+//{
+//  if (sin(2*pi*pos*freq)>0){
+//    digitalWrite(texturePin, HIGH);
+//    //digitalWrite(texturePinG, HIGH);
+//  } 
+//  else if (sin(2*pi*pos*freq)<=0){
+//    digitalWrite(texturePin, LOW);
+//    //digitalWrite(texturePinG, LOW);
+//  }          
+//}
 
-void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, int highFreq)
-{
-  if (invertRun==0){
-    if (pos < targetPos | pos > targetPos+targetRange){ 
-      sin_texture(pos, lowFreq);
-    }
-    else if (pos >= targetPos | pos <= targetPos+targetRange){
-      sin_texture(pos, highFreq);
-    }
-  }
-  else
-    if (pos > targetPos | pos < (targetPos-targetRange)){ 
-      sin_texture(pos, lowFreq);
-    }
-    else if (pos <= targetPos | pos >= (targetPos-targetRange)){
-      sin_texture(pos, highFreq);
-    }  
-}
+//void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, int highFreq)
+//{
+//  if (invertRun==0){
+//    if (pos < targetPos | pos > targetPos+targetRange){ 
+//      sin_texture(pos, lowFreq);
+//    }
+//    else if (pos >= targetPos | pos <= targetPos+targetRange){
+//      sin_texture(pos, highFreq);
+//    }
+//  }
+//  else
+//    if (pos > targetPos | pos < (targetPos-targetRange)){ 
+//      sin_texture(pos, lowFreq);
+//    }
+//    else if (pos <= targetPos | pos >= (targetPos-targetRange)){
+//      sin_texture(pos, highFreq);
+//    }  
+//}
 
 int lookForSerial(){
   int saBit;
@@ -302,11 +351,21 @@ int lookForSerial(){
   }
   return saBit;
 }
- 
 
-
+long getNextClickTarget(long pos, long targetPos, long targetRange, long mean1, long mean2){
+  long nextClickPos;
+    if (pos < targetPos | pos > targetPos+targetRange){ 
+      nextClickPos=long(-log(random(1,101)*0.01)*mean1);
+      //nextClickPos=100000;
+    }
+    else if (pos >= targetPos | pos <= targetPos+targetRange){
+      nextClickPos=int(-log(random(1,101)*0.01)*mean2);
+    }
+      return nextClickPos;
+}
 
     
     
+
 
 
