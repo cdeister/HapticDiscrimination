@@ -18,7 +18,7 @@ toPlot=1;
 p_fps=20; % doesn't keep up below 5, but loop is still good.
 invert=0;
 yRange=[-50,145];
-bufferSize=500;  %499 for debug mouse, 199 for production
+bufferSize=299;  %499 for debug mouse, 199 for production
 
 
 %%
@@ -46,7 +46,7 @@ stimChangePositions(1)=targetPos;
 stimChangeRanges(1)=targetRange;
 
 %%
-s1 = serial('/dev/cu.usbmodem1411');    % define serial port
+s1 = serial('/dev/cu.usbmodem1421');    % define serial port
 s1.BaudRate=115200;       % define baud rate
 set(s1, 'terminator', 'LF');    % define the terminator for println
 fopen(s1);
@@ -107,17 +107,18 @@ while ((totalTime/1000)<numSec)
             clickTrainRight(n)=fscanf(s1,'%d');
             leftExpectedVal(n)=fscanf(s1,'%d');
             rightExpectedVal(n)=fscanf(s1,'%d');
+            stimDif=leftExpectedVal(n)-rightExpectedVal(n);
             currentState=states(n);
             if timeInStates(n)>trialStartGrace && mean(abs(deltas(end-(bufferSize-1):end)))<stopThreshold
-                if invert==1
+                if stimDif==0
                     if positions(n)>stimChangePositions(end)
-                        behaviorState=1;
-                        fprintf(s1,'%u',4);
+                        behaviorState=0;
+                        fprintf(s1,'%u',3);
                     else
                         behaviorState=0;
                         fprintf(s1,'%u',3);
                     end
-                elseif invert==0
+                elseif stimDif~=0
                     if positions(n)>stimChangePositions(end)
                         behaviorState=1;
                         fprintf(s1,'%u',4);
@@ -170,11 +171,11 @@ while ((totalTime/1000)<numSec)
         drawnow
         switch(behaviorState)
             case 2
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
             case 1
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color[rgb]{0 .5 .2}last trial = hit' ' \color[rgb]{0 0 0}left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color[rgb]{0 .5 .2}last trial = hit' ' \color[rgb]{0 0 0}left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
             case 0
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color{red}last trial = miss' ' \color[rgb]{0 0 0}left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color{red}last trial = miss' ' \color[rgb]{0 0 0}left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
         end
         
     else

@@ -1,0 +1,33 @@
+Haptic Discrimination Parts List
+
+2x Arduino UNO @ $25 each
+One controls the stepper and servo and the other runs the task. You can get away with one, but things can get current limited quickly. If you want to use an arduino "compatible" board, most should be ok, but make sure it is using the Atmega328 chip. Some arduino boards like the Leonardo and Yun use the ATmega32u4 which virtualizes the serial communication and streams the data crazy slow. You can get a MEGA, but the sketch will easily fit on an UNO.
+
+http://www.arduino.cc/en/Main/ArduinoBoardUno
+suggested source: http://www.adafruit.com/products/50
+
+
+1x Arduino USB Host Shield @ $25
+https://www.circuitsathome.com/products-page/arduino-shields/usb-host-shield-2-0-for-arduino
+Use: Reads the movemet of the mouse.
+Alternative: Arduino started making a simillar board that uses the same library, but I haven't tried it.
+http://www.arduino.cc/en/Main/ArduinoUSBHostShield
+
+1x Adafruit Stepper Motor Shield @ $20
+This is needed if you want to use a stepper motor like we do to deliver water rewards via a syring pump. If you care to use solenoids you probably know how to replace this, but feel free to get in touch if you want a source for good solenoids or advice on driving them. This board is nice, but the setup is a bit involved. Stepper motor drivers are pretty commonplace so feel free to use something else. 
+I tried this one:
+http://www.seeedstudio.com/depot/motor-shield-v20-p-1377.html?cPath=132_134
+And liked it fine. It's documentation is effectivley non-existent. I included some code to use it.
+I also tried the popular "easyDriver" but I couldn't get the current regulation to work right:
+https://www.sparkfun.com/products/12779
+If you want to try the easyDriver go here for a great tutorial:
+http://bildr.org/2011/06/easydriver/
+
+1x Stepper motor @ $35
+These are very standard. We used a threaded rod variant from here:
+http://www.robotdigg.com/product/8/Threaded-Rod-NEMA17,-280mm-Tr8*8mm-Acme-Leadscrew
+Paired it with one of these: http://www.robotdigg.com/product/18/Anti-backlash-Nut-for-Tr8*8-Leadscrew
+Also a flat rod, and linear bearing: http://www.robotdigg.com/product/13/LM8UU-Linear-Bearing
+We then printed some other pieces to make a syring pump that was driven by this motor. Pictures and STLs included.
+
+ 

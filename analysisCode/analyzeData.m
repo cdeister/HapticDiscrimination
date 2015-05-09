@@ -7,11 +7,73 @@
 
 
 % first make a flat time vector.
-flatData.time(:,1)=data.totalTime{1};
-for n=2:numel(data.totalTime)
-    dataToAdd=data.totalTime{n}+flatData.time(end);
-    flatData.time=vertcat(flatData.time,dataToAdd');
-end
-clear n dataToAdd
+flatData.time=flattenData(data.totalTime,1);
+flatData.states=flattenData(data.states);
+flatData.positions=flattenData(data.positions);
+flatData.stimChangePositions=flattenData(data.stimChangePositions);
+flatData.leftVal=flattenData(data.leftExpectedVal);
+flatData.rightVal=flattenData(data.rightExpectedVal);
+flatData.stimDiff=abs(flatData.leftVal-flatData.rightVal);
 
-% next we 
+%% if you want to fish out by state
+
+
+state_2.time=flattenData(filterDataByState(data.timeInStates,data.states,2),0);
+state_2.positions=flattenData(filterDataByState(data.positions,data.states,2),0);
+% now this will have a bunch of resets to zero.
+timeResets=diff(state_2.time);  % These predict the reset by 1 sample of course, but we need this time.
+resetPositions=find(timeResets<0); % As a sanity check, these should equal the total number of trials minus 1.
+
+
+state_2.time_byTrial{1}=state_2.time(1:resetPositions(1))';
+for n=1:numel(resetPositions)-1
+    state_2.time_byTrial{n+1}=state_2.time(resetPositions(n)+1:resetPositions(n+1))';
+end
+state_2.time_byTrial{numel(resetPositions)+1}=state_2.time(resetPositions(end)+1:end)';
+state_2.flatTime=flattenData(state_2.time_byTrial,1);
+
+
+state_2.positions=flattenData(filterDataByState(data.positions,data.states,2),0);
+state_2.positions_byTrial{1}=state_2.positions(1:resetPositions(1))';
+for n=1:numel(resetPositions)-1
+    state_2.positions_byTrial{n+1}=state_2.positions(resetPositions(n)+1:resetPositions(n+1))';
+end
+state_2.positions_byTrial{numel(resetPositions)+1}=state_2.positions(resetPositions(end)+1:end)';
+
+state_2.stimChangePositions=flattenData(filterDataByState(data.stimChangePositions,data.states,2),0);
+state_2.stimChangePositions_byTrial{1}=state_2.stimChangePositions(1:resetPositions(1))';
+for n=1:numel(resetPositions)-1
+    state_2.stimChangePositions_byTrial{n+1}=state_2.stimChangePositions(resetPositions(n)+1:resetPositions(n+1))';
+end
+state_2.stimChangePositions_byTrial{numel(resetPositions)+1}=state_2.stimChangePositions(resetPositions(end)+1:end)';
+
+
+%% Look at what happens just before each stop.
+
+for n=1:numel(state_2.positions_byTrial)
+    state_2.endTriggerPositions(:,n)=state_2.positions_byTrial{n}(end-10:end);
+    state_2.endTriggerChangePositions(:,n)=state_2.stimChangePositions_byTrial{n}(end-10:end);
+end
+
+%%
+hits=state_2.endTriggerPositions(end,:)>=state_2.endTriggerChangePositions(end,:);
+misses=abs(1-hits);
+hitRate=numel(find(hits==1))/numel(hits);
+
+%% get length of each trial
+for n=1:numel(state_2.time_byTrial)
+state_2.trialLengths(:,n)=state_2.time_byTrial{n}(end);
+end
+state_2.attemptedTrials=find(state_2.trialLengths>5000);
+filteredHits=state_2.endTriggerPositions(end,state_2.trialLengths>5000)>=state_2.endTriggerChangePositions(end,state_2.trialLengths>5000);
+attemtptedHits=state_2.attemptedTrials(filteredHits==1);
+attemtptedMisses=state_2.attemptedTrials(filteredHits==0);
+
+figure,nhist(flatData.stimDiff(attemtptedHits))
+
+%%
+n=attemtptedMisses(7);
+figure,plot(state_2.endTriggerPositions(:,n))
+hold all,plot(state_2.endTriggerChangePositions(:,n))
+hold all,plot(smooth(diff(smooth(state_2.endTriggerPositions(:,n),10))*500))
+hold all,plot(smooth(diff(smooth(diff(smooth(state_2.endTriggerPositions(:,n),10)),10))*10000))

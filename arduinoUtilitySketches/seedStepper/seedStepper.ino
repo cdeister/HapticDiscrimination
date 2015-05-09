@@ -121,7 +121,7 @@ void initialize()
   pinMode(bitPin,INPUT);
   digitalWrite(bitPin, LOW); 
   stop();
-  stepperMotor.speed = 40;
+  stepperMotor.speed=30;
   stepperMotor.direction = MOTOR_CLOCKWISE;
 }
 /*******************************************/
@@ -140,9 +140,9 @@ void setup()
 void loop()
 {
   pinFlip=digitalRead(bitPin);
-  if (pinFlip==1){
-    step(30);//Stepper motors rotate anticlockwise 200 steps.
+  //if (pinFlip==2){
+    step(-1);//Stepper motors rotate anticlockwise 200 steps.
     delay(1000);
-    step(-5);//Stepper motors rotate clockwise 200 steps.
-  }
+    //step(1);//Stepper motors rotate clockwise 200 steps.
+  //}
 }

@@ -44,7 +44,7 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Stuff
-long lFreq[]={700,2000};
+long lFreq[]={200,6000};
 int lRand=0;
 int rRand=1;
 int clickTime=1000;  // in microseconds
@@ -60,11 +60,12 @@ long tRangeE;
 long targPos=10000;
 const float pi = 3.14;
 int tCount=1;
-long lowPos=10000;
-long highPos=60000;
+long lowPos=4000;
+long highPos=20000;
 int rewardTime=2000;  // in ms
-int solenoidTime=50;  // in ms
-
+int stepperTime=100;  // in ms
+int catchProb=10;     // in % (p*100)
+int catchNum;         // random integer that will trip catch condition
 
 # define rPin 6
 # define gPin 5
@@ -72,7 +73,7 @@ int solenoidTime=50;  // in ms
 # define clickPinL 7
 # define clickPinR 8
 # define servoPin 9
-# define solenoidPin 12
+# define stepperPin 12
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -96,14 +97,14 @@ void setup()
     pinMode(bPin, OUTPUT);
     pinMode(clickPinL,OUTPUT);
     pinMode(clickPinR,OUTPUT);
-    pinMode(solenoidPin,OUTPUT);
+    pinMode(stepperPin,OUTPUT);
     
     digitalWrite(rPin, HIGH);
     digitalWrite(gPin, HIGH);
     digitalWrite(bPin, HIGH);
     digitalWrite(clickPinL, LOW);
     digitalWrite(clickPinR, LOW);
-    digitalWrite(solenoidPin,LOW);
+    digitalWrite(stepperPin,LOW);
     
     myservo.attach(servoPin);
     myservo.write(restPos); 
@@ -207,7 +208,7 @@ State S2_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  if(Simple.Timeout(60000)) Simple.Set(S3_H,S3_B);
+  if(Simple.Timeout(20000)) Simple.Set(S3_H,S3_B);
   // if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
   if(sB==52) Simple.Set(S4_H,S4_B);
@@ -223,8 +224,12 @@ State S3_H(){
   myservo.write(restPos);
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
+  catchNum=random(1,30);
   lRand=int(random(0,2));
   rRand=1-lRand;
+  if (catchNum==1){
+    rRand=lRand;
+  }
   lastPos=Prs.curPos;  
 }
 
@@ -258,7 +263,7 @@ State S4_H(){
   Prs.curPos=0;
   lastKnownState=52; 
   myservo.write(rewardPos);
-  digitalWrite(solenoidPin, HIGH);
+  digitalWrite(stepperPin, HIGH);
 }
 
 State S4_B(){
@@ -278,8 +283,8 @@ State S4_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  if (tS>solenoidTime){
-    digitalWrite(solenoidPin,LOW);
+  if (tS>stepperTime){
+    digitalWrite(stepperPin,LOW);
   }
   if(Simple.Timeout(rewardTime))  Simple.Set(S3_H,S3_B);
 //  if(sB==49) Simple.Set(S1_H,S1_B);
