@@ -154,6 +154,7 @@ State S1_B(){
 }
 
 State S2_H(){
+  blinkGreen(5,30);
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, LOW);
   digitalWrite(bPin, HIGH);
@@ -256,9 +257,7 @@ State S3_B(){
 }
 
 State S4_H(){
-  digitalWrite(rPin, HIGH);
-  digitalWrite(gPin, HIGH);
-  digitalWrite(bPin, LOW);
+  blinkBlue(5,20);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=52; 
@@ -367,6 +366,32 @@ long getNextClickTarget(long pos, long targetPos, long targetRange, long mean1, 
       nextClickPos=int(-log(random(1,101)*0.01)*mean2);
     }
       return nextClickPos;
+}
+
+void blinkBlue(int reps,int msInterval){
+  for (int n=0; n<reps; n++){
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, HIGH);
+    digitalWrite(bPin, LOW);
+    delay(msInterval);
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, HIGH);
+    digitalWrite(bPin, HIGH);
+    delay(msInterval);
+  }
+}
+
+void blinkGreen(int reps,int msInterval){
+  for (int n=0; n<reps; n++){
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, LOW);
+    digitalWrite(bPin, HIGH);
+    delay(msInterval);
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, HIGH);
+    digitalWrite(bPin, HIGH);
+    delay(msInterval);
+  }
 }
 
     
