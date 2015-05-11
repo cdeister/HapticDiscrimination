@@ -1,3 +1,4 @@
+
 /* 
 Stepper drive of syringe pump for water rewards.
 This uses the adafruit Motor Shield for Arduino v2
@@ -10,6 +11,7 @@ This uses the adafruit Motor Shield for Arduino v2
 #include "utility/Adafruit_PWMServoDriver.h"
 # define bitPin 2
 # define retractPin 3
+# define primePin 4
 
 int stepsPerReward=34;
 int toggleDelay=1000;
@@ -17,6 +19,9 @@ int readingBP;           // the current reading from the input pin
 int previousBP = 0;    // the previous reading from the input pin
 int readingRP;
 int previousRP = 0;
+int readingPP;
+int previousPP=0;
+
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 
@@ -35,6 +40,7 @@ void setup() {
 void loop() {
   readingBP = digitalRead(bitPin);
   readingRP = digitalRead(retractPin);
+  readingPP = digitalRead(primePin);
   if (readingBP==1 && previousBP==0){
     for (int n=0; n<stepsPerReward; n++){
       myMotor->onestep(FORWARD, MICROSTEP); 
@@ -42,9 +48,20 @@ void loop() {
     delay(toggleDelay);
   }
   if (readingRP==1 && previousRP==0){
-      myMotor->step(200, BACKWARD, SINGLE);
+    while (readingRP==1){
+      myMotor->step(1, BACKWARD, MICROSTEP);
+      readingRP = digitalRead(retractPin);
+    }
+    delay(toggleDelay);
+  }
+  if (readingPP==1 && previousPP==0){
+    while (readingPP==1){
+      myMotor->step(1, FORWARD, MICROSTEP);
+      readingPP = digitalRead(primePin);
+    }
     delay(toggleDelay);
   }
   previousBP=readingBP;
   previousRP=readingRP;
+  previousPP=readingPP;
 }
