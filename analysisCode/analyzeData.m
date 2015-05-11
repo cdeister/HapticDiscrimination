@@ -33,7 +33,7 @@ state_2.time_byTrial{numel(resetPositions)+1}=state_2.time(resetPositions(end)+1
 state_2.flatTime=flattenData(state_2.time_byTrial,1);
 
 
-state_2.positions=flattenData(filterDataByState(data.positions,data.states,2),0);
+state_2.positions=smooth(flattenData(filterDataByState(data.positions,data.states,2),0));
 state_2.positions_byTrial{1}=state_2.positions(1:resetPositions(1))';
 for n=1:numel(resetPositions)-1
     state_2.positions_byTrial{n+1}=state_2.positions(resetPositions(n)+1:resetPositions(n+1))';
@@ -47,6 +47,31 @@ for n=1:numel(resetPositions)-1
 end
 state_2.stimChangePositions_byTrial{numel(resetPositions)+1}=state_2.stimChangePositions(resetPositions(end)+1:end)';
 
+%% deriv trigger
+clear derivCrossings dCrossPos
+derivThresh=700;
+for n=1:numel(state_2.positions_byTrial)
+    dCrossPos=find(state_2.positions_byTrial{n}>=derivThresh);
+   if numel(dCrossPos)>0
+    derivCrossings(:,n)=dCrossPos(1);
+   else
+    derivCrossings(:,n)=0;
+   end
+end
+
+%% 
+clear state_2.thresholdAlignedPositions{n}
+attemptedCrosses=derivCrossings(find(derivCrossings>10));
+for n=1:numel(attemptedCrosses)
+    state_2.thresholdAlignedPositions{n}=state_2.positions_byTrial{n}(attemptedCrosses(n):attemptedCrosses(n)+10);
+    state_2.endTriggerChangePositions(:,n)=state_2.stimChangePositions_byTrial{n}(end);
+end
+
+%% 
+figure,hold all
+for n=1:numel(find(derivCrossings>0))
+    plot(state_2.thresholdAlignedPositions{n})
+end
 
 %% Look at what happens just before each stop.
 
@@ -77,3 +102,16 @@ figure,plot(state_2.endTriggerPositions(:,n))
 hold all,plot(state_2.endTriggerChangePositions(:,n))
 hold all,plot(smooth(diff(smooth(state_2.endTriggerPositions(:,n),10))*500))
 hold all,plot(smooth(diff(smooth(diff(smooth(state_2.endTriggerPositions(:,n),10)),10))*10000))
+
+
+%%
+
+for n=1:numel(attemtptedHits)
+    state_2.endTriggerPositionsAtHits(:,n)=state_2.positions_byTrial{attemtptedHits(n)}(end-1000:end);
+    state_2.endTriggerChangePositionsAtHits(:,n)=state_2.stimChangePositions_byTrial{attemtptedHits(n)}(end-1000:end);
+end
+
+for n=1:numel(attemtptedMisses)
+    state_2.endTriggerPositionsAtMisses(:,n)=state_2.positions_byTrial{attemtptedMisses(n)}(end-1000:end);
+    state_2.endTriggerChangePositionsAtMisses(:,n)=state_2.stimChangePositions_byTrial{attemtptedMisses(n)}(end-1000:end);
+end

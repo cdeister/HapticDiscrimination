@@ -44,7 +44,7 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Stuff
-long lFreq[]={200,6000};
+long lFreq[]={400,7000};
 int lRand=0;
 int rRand=1;
 int clickTime=1000;  // in microseconds
