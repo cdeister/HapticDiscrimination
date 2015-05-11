@@ -171,11 +171,11 @@ while ((totalTime/1000)<numSec)
         drawnow
         switch(behaviorState)
             case 2
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
             case 1
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color[rgb]{0 .5 .2}last trial = hit' ' \color[rgb]{0 0 0}left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color[rgb]{0 .5 .2}last trial = hit' ' \color[rgb]{0 0 0}left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
             case 0
-                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color{red}last trial = miss' ' \color[rgb]{0 0 0}left EV= ' num2str(rightExpectedVal(end)) ' right EV= ' num2str(leftExpectedVal(end))])
+                title(['trial# ' num2str(trialCount(end)) ' & state ' num2str(states(n)) ' \color{red}last trial = miss' ' \color[rgb]{0 0 0}left EV= ' num2str(leftExpectedVal(end)) ' right EV= ' num2str(rightExpectedVal(end))])
         end
         
     else

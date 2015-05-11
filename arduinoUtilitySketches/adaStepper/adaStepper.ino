@@ -9,11 +9,14 @@ This uses the adafruit Motor Shield for Arduino v2
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 # define bitPin 2
+# define retractPin 3
 
 int stepsPerReward=34;
 int toggleDelay=1000;
-int reading;           // the current reading from the input pin
-int previous = 0;    // the previous reading from the input pin
+int readingBP;           // the current reading from the input pin
+int previousBP = 0;    // the previous reading from the input pin
+int readingRP;
+int previousRP = 0;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 
@@ -30,12 +33,18 @@ void setup() {
 }
 
 void loop() {
-  reading = digitalRead(bitPin);
-  if (reading==1 && previous==0){
+  readingBP = digitalRead(bitPin);
+  readingRP = digitalRead(retractPin);
+  if (readingBP==1 && previousBP==0){
     for (int n=0; n<stepsPerReward; n++){
       myMotor->onestep(FORWARD, MICROSTEP); 
     }
     delay(toggleDelay);
   }
-  previous=reading;
+  if (readingRP==1 && previousRP==0){
+      myMotor->step(200, BACKWARD, SINGLE);
+    delay(toggleDelay);
+  }
+  previousBP=readingBP;
+  previousRP=readingRP;
 }
