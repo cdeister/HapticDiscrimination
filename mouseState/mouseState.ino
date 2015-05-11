@@ -44,7 +44,7 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Stuff
-long lFreq[]={500,2000};
+long lFreq[]={800,0};
 int lRand=0;
 int rRand=1;
 int clickTime=1000;  // in microseconds
@@ -54,24 +54,30 @@ int clickDeltaL;
 int clickDeltaR;
 int clickLBool;
 int clickRBool;
+int previousToggle;
+int positionToggle;
+int temp_lRand;
+int temp_rRand;
 
 long tRange=90000;
 long tRangeE;
-long targPos=10000;
+long targPos=15000;
 const float pi = 3.14;
 int tCount=1;
-long lowPos=4000;
-long highPos=20000;
+long lowPos=8000;
+long highPos=65000;
 int rewardTime=2000;  // in ms
 int stepperTime=100;  // in ms
 int catchProb=10;     // in % (p*100)
 int catchNum;         // random integer that will trip catch condition
+
 
 # define rPin 6
 # define gPin 5
 # define bPin 3
 # define clickPinL 7
 # define clickPinR 8
+
 # define servoPin 9
 # define stepperPin 12
 
@@ -163,6 +169,12 @@ State S2_H(){
   lastKnownState=50;
   clickDeltaL=0;
   clickDeltaR=0;
+  temp_lRand=lFreq[lRand];
+  temp_rRand=lFreq[rRand];  // backwards for init? bug unclear ... 
+  clickPosL=getNextClickTarget(temp_lRand);
+  clickPosR=getNextClickTarget(temp_rRand);
+  previousToggle=1;
+  positionToggle=0;
 }
 
 State S2_B(){
@@ -170,12 +182,34 @@ State S2_B(){
     lastPos=Prs.curPos;
     clickDeltaL=clickDeltaL+abs(mouseDelta);
     clickDeltaR=clickDeltaR+abs(mouseDelta);
-   
+    if (Prs.curPos>=targPos){
+      positionToggle=1;
+    }
+    else if (Prs.curPos<targPos){
+      positionToggle=0;
+    }
+    if (positionToggle==0 && previousToggle==1){
+      temp_lRand=lFreq[lRand];
+      temp_rRand=lFreq[rRand];
+      clickPosL=getNextClickTarget(temp_lRand);
+      clickPosR=getNextClickTarget(temp_rRand);
+      clickDeltaL=0;
+      clickDeltaR=0;
+    }
+    else if (positionToggle==1 && previousToggle==0){
+      temp_lRand=lFreq[rRand];
+      temp_rRand=lFreq[lRand];
+      clickPosL=getNextClickTarget(temp_lRand);
+      clickPosR=getNextClickTarget(temp_rRand);
+      clickDeltaL=0;
+      clickDeltaR=0;
+    }
+
    if (clickDeltaL >= clickPosL){
     digitalWrite(clickPinL,HIGH);
     delayMicroseconds(clickTime);
     digitalWrite(clickPinL,LOW);
-    clickPosL=getNextClickTarget(Prs.curPos, targPos, tRange, lFreq[lRand], lFreq[rRand]);
+    clickPosL=getNextClickTarget(temp_lRand);
     clickDeltaL=0;
     clickLBool=1;
    }
@@ -187,7 +221,7 @@ State S2_B(){
      digitalWrite(clickPinR,HIGH);
      delayMicroseconds(clickTime);
      digitalWrite(clickPinR,LOW);
-     clickPosR=getNextClickTarget(Prs.curPos, targPos, tRange, lFreq[rRand], lFreq[lRand]);
+     clickPosR=getNextClickTarget(temp_rRand);
      clickDeltaR=0;
      clickRBool=1;
    }
@@ -209,8 +243,8 @@ State S2_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  if(Simple.Timeout(20000)) Simple.Set(S3_H,S3_B);
-  // if(sB==49) Simple.Set(S1_H,S1_B);
+  previousToggle=positionToggle;
+  if(Simple.Timeout(90000)) Simple.Set(S3_H,S3_B);
   if(sB==51) Simple.Set(S3_H,S3_B);
   if(sB==52) Simple.Set(S4_H,S4_B);
 }
@@ -313,36 +347,6 @@ State S5_B(){
 
 // ---------- Helper Functions
 
-//void sin_texture(int pos, int freq)
-//{
-//  if (sin(2*pi*pos*freq)>0){
-//    digitalWrite(texturePin, HIGH);
-//    //digitalWrite(texturePinG, HIGH);
-//  } 
-//  else if (sin(2*pi*pos*freq)<=0){
-//    digitalWrite(texturePin, LOW);
-//    //digitalWrite(texturePinG, LOW);
-//  }          
-//}
-
-//void burriedSin_texture(int pos, int targetPos, int targetRange, int lowFreq, int highFreq)
-//{
-//  if (invertRun==0){
-//    if (pos < targetPos | pos > targetPos+targetRange){ 
-//      sin_texture(pos, lowFreq);
-//    }
-//    else if (pos >= targetPos | pos <= targetPos+targetRange){
-//      sin_texture(pos, highFreq);
-//    }
-//  }
-//  else
-//    if (pos > targetPos | pos < (targetPos-targetRange)){ 
-//      sin_texture(pos, lowFreq);
-//    }
-//    else if (pos <= targetPos | pos >= (targetPos-targetRange)){
-//      sin_texture(pos, highFreq);
-//    }  
-//}
 
 int lookForSerial(){
   int saBit;
@@ -356,16 +360,13 @@ int lookForSerial(){
   return saBit;
 }
 
-long getNextClickTarget(long pos, long targetPos, long targetRange, long mean1, long mean2){
-  long nextClickPos;
-    if (pos < targetPos | pos > targetPos+targetRange){ 
-      nextClickPos=long(-log(random(1,101)*0.01)*mean1);
-      //nextClickPos=100000;
-    }
-    else if (pos >= targetPos | pos <= targetPos+targetRange){
-      nextClickPos=int(-log(random(1,101)*0.01)*mean2);
-    }
-      return nextClickPos;
+long getNextClickTarget(long expVal){
+   long nextClickPos;
+   nextClickPos= long(-log(random(1,101)*0.01)*expVal);
+   if (expVal==0){
+        nextClickPos=long(500000);
+   }
+   return nextClickPos;
 }
 
 void blinkBlue(int reps,int msInterval){

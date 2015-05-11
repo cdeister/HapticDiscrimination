@@ -69,7 +69,7 @@ end
 figure;
 clf; hold on;
 plot(state_2.endTriggerChangePositions,state_2.endTriggerPositions,'ko')
-a=50000;
+a=10000;
 plot([0 1].*a,[0 1].*a,'k');
 daspect([1 1 1]);
 
