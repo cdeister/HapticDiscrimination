@@ -59,17 +59,19 @@ int positionToggle;
 int temp_lRand;
 int temp_rRand;
 
-long tRange=90000;
-long tRangeE;
+//long tRangeE;
 long targPos=15000;
+long tRange=2*targPos;
 const float pi = 3.14;
 int tCount=1;
 long lowPos=8000;
 long highPos=65000;
-int rewardTime=2000;  // in ms
-int stepperTime=100;  // in ms
-int catchProb=10;     // in % (p*100)
-int catchNum;         // random integer that will trip catch condition
+int rewardTime=2000;    // in ms
+int stepperTime=100;    // in ms
+int timeoutTime=5000;   // in ms
+int trialTimeout=20000; // in ms
+int catchProb=10;       // in % (p*100)
+int catchNum;           // random integer that will trip catch condition
 
 
 # define rPin 6
@@ -150,7 +152,7 @@ State S1_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRangeE);
+  Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
@@ -182,10 +184,10 @@ State S2_B(){
     lastPos=Prs.curPos;
     clickDeltaL=clickDeltaL+abs(mouseDelta);
     clickDeltaR=clickDeltaR+abs(mouseDelta);
-    if (Prs.curPos>=targPos){
+    if (Prs.curPos>=targPos && Prs.curPos<=targPos+tRange){
       positionToggle=1;
     }
-    else if (Prs.curPos<targPos){
+    else if (Prs.curPos<targPos || Prs.curPos>targPos+tRange){
       positionToggle=0;
     }
     if (positionToggle==0 && previousToggle==1){
@@ -238,15 +240,16 @@ State S2_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRangeE);
+  Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
   previousToggle=positionToggle;
-  if(Simple.Timeout(90000)) Simple.Set(S3_H,S3_B);
-  if(sB==51) Simple.Set(S3_H,S3_B);
-  if(sB==52) Simple.Set(S4_H,S4_B);
+  if(Simple.Timeout(trialTimeout)) Simple.Set(S3_H,S3_B);
+  if(sB==51) Simple.Set(S3_H,S3_B); // wait state
+  if(sB==52) Simple.Set(S4_H,S4_B); // reward state
+  if(sB==53) Simple.Set(S5_H,S5_B); // miss (punishment) state
 }
 
 State S3_H(){
@@ -259,6 +262,7 @@ State S3_H(){
   myservo.write(restPos);
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
+  tRange=2*targPos;
   catchNum=random(1,30);
   lRand=int(random(0,2));
   rRand=1-lRand;
@@ -280,7 +284,7 @@ State S3_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRangeE);
+  Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
@@ -311,7 +315,7 @@ State S4_B(){
   Serial.println(millis()-beginTime);
   Serial.println(tCount);
   Serial.println(targPos);
-  Serial.println(tRangeE);
+  Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
@@ -320,22 +324,46 @@ State S4_B(){
     digitalWrite(stepperPin,LOW);
   }
   if(Simple.Timeout(rewardTime))  Simple.Set(S3_H,S3_B);
-//  if(sB==49) Simple.Set(S1_H,S1_B);
-//  if(sB==50)  myservo.write(restPos); Simple.Set(S2_H,S2_B);
-//  if(sB==51) myservo.write(restPos); Simple.Set(S3_H,S3_B);
 }
 
 State S5_H(){
+  blinkTeal(8,20);
+  lastPos=Prs.curPos;
+  Prs.curPos=0;
+  lastKnownState=53; 
+}
+
+State S5_B(){
+  mouseDelta=Prs.curPos-lastPos;
+  lastPos=Prs.curPos;
+  tS=Simple.Statetime();
+  Serial.println(4);
+  Serial.println(Prs.curPos);
+  Serial.println(mouseDelta);
+  Serial.println(tS);
+  sB=lookForSerial();
+  Serial.println(millis()-beginTime);
+  Serial.println(tCount);
+  Serial.println(targPos);
+  Serial.println(tRange);
+  Serial.println(clickLBool);
+  Serial.println(clickRBool);
+  Serial.println(lFreq[lRand]);
+  Serial.println(lFreq[rRand]);
+  if(Simple.Timeout(timeoutTime))  Simple.Set(S3_H,S3_B);
+}
+
+State S6_H(){
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, LOW);
   digitalWrite(bPin, LOW);
   lastPos=Prs.curPos;
   Prs.curPos=0;
-  lastKnownState=53;
+  lastKnownState=54;
   Serial.flush(); 
 }
 
-State S5_B(){
+State S6_B(){
   tS=Simple.Statetime();
   sB=lookForSerial();
   if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
@@ -395,6 +423,18 @@ void blinkGreen(int reps,int msInterval){
   }
 }
 
+void blinkTeal(int reps,int msInterval){
+  for (int n=0; n<reps; n++){
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, LOW);
+    digitalWrite(bPin, LOW);
+    delay(msInterval);
+    digitalWrite(rPin, HIGH);
+    digitalWrite(gPin, HIGH);
+    digitalWrite(bPin, HIGH);
+    delay(msInterval);
+  }
+}
     
     
 

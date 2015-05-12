@@ -5,7 +5,7 @@
 
 exportPath='~/Desktop/';
 startTimeLog=fix(clock);
-saveName=['JV16_' date '_' num2str(startTimeLog(4)) ':' num2str(startTimeLog(5))];
+saveName=['cad_' date '_' num2str(startTimeLog(4)) ':' num2str(startTimeLog(5))];
 clear startTimeLog
 
 for k=1:5
@@ -13,12 +13,12 @@ for k=1:5
 clearvars -except k data exportPath saveName startTimeLog
 close all
 numTrials=1;
-sensorCal= 9000/9;  % in inches
+sensorCal= 900/25.4;  % in mm
 toPlot=1;
 p_fps=20; % doesn't keep up below 5, but loop is still good.
 invert=0;
-yRange=[-50,145];
-bufferSize=299;  %499 for debug mouse, 199 for production
+yRange=[-500,6500];
+bufferSize=199;  %499 for debug mouse, 199 for production
 
 
 %%
@@ -71,6 +71,8 @@ figure(998)
 aPL = animatedline('Color',[0.1 0.1 0.1]);
 aSL=animatedline('Color',[0.8 0 0]);
 aSP=animatedline('Color',[0.8 0 0.6]);
+aSR=animatedline('Color',[0.8 0.5 0.6]);
+
 axis([0,numSec*1000,yRange(1),yRange(2)])
 legend('pos.','state','stim change')
 
@@ -111,18 +113,21 @@ while ((totalTime/1000)<numSec)
             currentState=states(n);
             if timeInStates(n)>trialStartGrace && mean(abs(deltas(end-(bufferSize-1):end)))<stopThreshold
                 if stimDif==0
-                    if positions(n)>stimChangePositions(end)
+                    if (positions(n)>=stimChangePositions(end) && positions(n)<=stimChangePositions(end)+stimChangeRanges(end))
                         behaviorState=0;
-                        fprintf(s1,'%u',3);
+                        fprintf(s1,'%u',5);
                     else
                         behaviorState=0;
                         fprintf(s1,'%u',3);
                     end
                 elseif stimDif~=0
-                    if positions(n)>stimChangePositions(end)
+                    if (positions(n)>=stimChangePositions(end) && positions(n)<=stimChangePositions(end)+stimChangeRanges(end))
                         behaviorState=1;
                         fprintf(s1,'%u',4);
-                    else
+                    elseif (positions(n)>stimChangePositions(end)+stimChangeRanges(end)) % if animal runs past switch for too long miss + time out
+                        behaviorState=0;
+                        fprintf(s1,'%u',5);
+                    else                                                        % if animal doesn't run, or too little, just start anew
                         behaviorState=0;
                         fprintf(s1,'%u',3);
                     end
@@ -163,11 +168,27 @@ while ((totalTime/1000)<numSec)
             leftExpectedVal(n)=fscanf(s1,'%d');
             rightExpectedVal(n)=fscanf(s1,'%d');
             currentState=states(n);
+         case 5
+            n=n+1;
+            states(n)=fscanf(s1,'%d');
+            positions(n)=fscanf(s1,'%d');       
+            deltas(n)=fscanf(s1,'%f');       
+            timeInStates(n)=fscanf(s1,'%f');
+            totalTime(n)=fscanf(s1,'%f');
+            trialCount=fscanf(s1,'%d');
+            stimChangePositions(n)=fscanf(s1,'%d');
+            stimChangeRanges(n)=fscanf(s1,'%d');
+            clickTrainLeft(n)=fscanf(s1,'%d');
+            clickTrainRight(n)=fscanf(s1,'%d');
+            leftExpectedVal(n)=fscanf(s1,'%d');
+            rightExpectedVal(n)=fscanf(s1,'%d');
+            currentState=states(n);
     end
     if mod(n,p_fps)==0
         addpoints(aPL,totalTime(n),positions(n)./sensorCal);
         addpoints(aSL,totalTime(n),states(n));
         addpoints(aSP,totalTime(n),stimChangePositions(n)./sensorCal);
+        addpoints(aSR,totalTime(n),(stimChangePositions(n)+stimChangeRanges(n))./sensorCal);
         drawnow
         switch(behaviorState)
             case 2
@@ -184,7 +205,7 @@ end
     
 
 
-fprintf(s1,'%u',5);  % Pause State (no serial)
+fprintf(s1,'%u',6);  % Pause State (no serial)
 fclose(s1);
 
 % catch exception

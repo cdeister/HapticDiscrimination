@@ -15,6 +15,8 @@ flatData.leftVal=flattenData(data.leftExpectedVal);
 flatData.rightVal=flattenData(data.rightExpectedVal);
 flatData.stimDiff=abs(flatData.leftVal-flatData.rightVal);
 
+stimCalA=(9000/25.4); % 9000 d/i * 1/25.4 in/mm
+
 %% if you want to fish out by state
 
 
@@ -66,12 +68,16 @@ for n=1:numel(state_2.positions_byTrial)
     state_2.endTriggerChangePositions(:,n)=state_2.stimChangePositions_byTrial{n}(end);
     state_2.endTriggerPositions(:,n)=state_2.positions_byTrial{n}(end);
 end
-figure;
+figure(876);
+h=gcf;
 clf; hold on;
-plot(state_2.endTriggerChangePositions,state_2.endTriggerPositions,'ko')
-a=50000;
+plot(state_2.endTriggerChangePositions./stimCalA,state_2.endTriggerPositions./stimCalA,'ko')
+a=200;
 plot([0 1].*a,[0 1].*a,'k');
+ylabel('end position in mm')
+xlabel('stim switch position in mm')
 daspect([1 1 1]);
+saveas(h,'~/Desktop/shape1.png')
 
 %% 
 figure,hold all
