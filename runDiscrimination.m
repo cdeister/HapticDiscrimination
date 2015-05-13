@@ -38,7 +38,7 @@ d(1:(bufferSize-1))=100;  % KLUDGE: This is just to make sure we initialize the 
 
 %% behavior variables
 trialStartGrace=4000;  % in ms
-minWaitStopTime=1000;  % in ms
+minWaitStopTime=500;  % in ms
 stopThreshold=6;
 targetPos=60000;
 targetRange=60000;
@@ -74,7 +74,7 @@ aSP=animatedline('Color',[0.8 0 0.6]);
 aSR=animatedline('Color',[0.8 0.5 0.6]);
 
 axis([0,numSec*1000,yRange(1),yRange(2)])
-legend('pos.','state','stim change')
+legend('pos.','state','stim change','choice boundary')
 
 % --- main block
 

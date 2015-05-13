@@ -58,12 +58,12 @@ end
 state_2.stimChangeRanges_byTrial{numel(resetPositions)+1}=state_2.stimChangeRanges(resetPositions(end)+1:end)';
 
 %%
-n=6;,figure,plot(state_2.positions_byTrial{n})
+n=1;,figure,plot(state_2.positions_byTrial{n})
 hold all,plot(state_2.stimChangePositions_byTrial{n},'k:')
-hold all,plot(state_2.stimChangePositions_byTrial{n}+state_2.stimChangeRanges_byTrial{n},'k:')
+hold all,plot(state_2.stimChangeRanges_byTrial{n},'k:')
 
 %% Get HM etc.
-for n=5:numel(state_2.stimChangeRanges_byTrial)
+for n=1:numel(state_2.stimChangeRanges_byTrial)
     state2_hits(:,n)=ismember(state_2.positions_byTrial{n}(end),(state_2.stimChangePositions_byTrial{n}(end):state_2.stimChangePositions_byTrial{n}(end)+state_2.stimChangeRanges_byTrial{n}(end)));
 end
 

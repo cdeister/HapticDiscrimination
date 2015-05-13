@@ -43,11 +43,23 @@ unsigned long beginTime;
 int lastKnownState=49;
 int sB;
 
-//**** Trial Stuff
+//**** Trial Params
 long lFreq[]={800,0};
+int clickTime=1000;  // in microseconds
+long targPos=15000;
+long tRange=34000;
+long lowPos=8000;
+long highPos=65000;
+int rewardTime=2000;    // in ms
+int stepperTime=100;    // in ms
+int timeoutTime=5000;   // in ms
+int trialTimeout=40000; // in ms
+int catchProb=10;       // in % (p*100)
+
+
+//*** Trial Variables
 int lRand=0;
 int rRand=1;
-int clickTime=1000;  // in microseconds
 long clickPosL;
 long clickPosR;
 int clickDeltaL;
@@ -58,28 +70,14 @@ int previousToggle;
 int positionToggle;
 int temp_lRand;
 int temp_rRand;
-
-//long tRangeE;
-long targPos=15000;
-long tRange=2*targPos;
-const float pi = 3.14;
 int tCount=1;
-long lowPos=8000;
-long highPos=65000;
-int rewardTime=2000;    // in ms
-int stepperTime=100;    // in ms
-int timeoutTime=5000;   // in ms
-int trialTimeout=20000; // in ms
-int catchProb=10;       // in % (p*100)
 int catchNum;           // random integer that will trip catch condition
-
 
 # define rPin 6
 # define gPin 5
 # define bPin 3
 # define clickPinL 7
 # define clickPinR 8
-
 # define servoPin 9
 # define stepperPin 12
 
@@ -187,9 +185,13 @@ State S2_B(){
     if (Prs.curPos>=targPos && Prs.curPos<=targPos+tRange){
       positionToggle=1;
     }
-    else if (Prs.curPos<targPos || Prs.curPos>targPos+tRange){
+    else if (Prs.curPos<targPos){
       positionToggle=0;
     }
+    else if (Prs.curPos>targPos+tRange){
+      Simple.Set(S5_H,S5_B);
+    }
+    
     if (positionToggle==0 && previousToggle==1){
       temp_lRand=lFreq[lRand];
       temp_rRand=lFreq[rRand];
@@ -262,7 +264,7 @@ State S3_H(){
   myservo.write(restPos);
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
-  tRange=2*targPos;
+  //tRange=2*targPos;
   catchNum=random(1,30);
   lRand=int(random(0,2));
   rRand=1-lRand;
@@ -337,7 +339,7 @@ State S5_B(){
   mouseDelta=Prs.curPos-lastPos;
   lastPos=Prs.curPos;
   tS=Simple.Statetime();
-  Serial.println(4);
+  Serial.println(5);
   Serial.println(Prs.curPos);
   Serial.println(mouseDelta);
   Serial.println(tS);
