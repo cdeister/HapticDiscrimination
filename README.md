@@ -1,4 +1,6 @@
 # HapticDiscrimination
 Software needed for budding haptic discrimination task.
 
-This is very early stuff. Very much in development.
+This is in a very functional, but still early state.
+
+contact cdeister@brown.edu with any questions
