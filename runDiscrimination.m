@@ -8,7 +8,7 @@ startTimeLog=fix(clock);
 saveName=['cad_' date '_' num2str(startTimeLog(4)) ':' num2str(startTimeLog(5))];
 clear startTimeLog
 
-for k=1:5
+for k=1:10
 %% clear data
 clearvars -except k data exportPath saveName startTimeLog
 close all
@@ -39,7 +39,7 @@ d(1:(bufferSize-1))=100;  % KLUDGE: This is just to make sure we initialize the 
 %% behavior variables
 trialStartGrace=4000;  % in ms
 minWaitStopTime=500;  % in ms
-stopThreshold=6;
+stopThreshold=10;
 targetPos=60000;
 targetRange=60000;
 stimChangePositions(1)=targetPos;

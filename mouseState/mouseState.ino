@@ -47,13 +47,13 @@ int sB;
 long lFreq[]={800,0};
 int clickTime=1000;  // in microseconds
 long targPos=15000;
-long tRange=34000;
+long tRange=20000;
 long lowPos=8000;
-long highPos=65000;
+long highPos=50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
-int trialTimeout=40000; // in ms
+int trialTimeout=60000; // in ms
 int catchProb=10;       // in % (p*100)
 
 
@@ -80,6 +80,7 @@ int catchNum;           // random integer that will trip catch condition
 # define clickPinR 8
 # define servoPin 9
 # define stepperPin 12
+# define alertPin 11
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -104,6 +105,7 @@ void setup()
     pinMode(clickPinL,OUTPUT);
     pinMode(clickPinR,OUTPUT);
     pinMode(stepperPin,OUTPUT);
+    pinMode(alertPin,OUTPUT);
     
     digitalWrite(rPin, HIGH);
     digitalWrite(gPin, HIGH);
@@ -111,6 +113,7 @@ void setup()
     digitalWrite(clickPinL, LOW);
     digitalWrite(clickPinR, LOW);
     digitalWrite(stepperPin,LOW);
+    digitalWrite(alertPin,LOW);
     
     myservo.attach(servoPin);
     myservo.write(restPos); 
@@ -160,10 +163,15 @@ State S1_B(){
 }
 
 State S2_H(){
-  blinkGreen(5,30);
+  //blinkGreen(5,30);
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, LOW);
   digitalWrite(bPin, HIGH);
+  digitalWrite(clickPinL,HIGH);
+  digitalWrite(clickPinR,HIGH);
+  delayMicroseconds(clickTime);
+  digitalWrite(clickPinR,LOW);
+  digitalWrite(clickPinL,LOW);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=50;
@@ -265,7 +273,7 @@ State S3_H(){
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
   //tRange=2*targPos;
-  catchNum=random(1,30);
+  catchNum=random(1,20);
   lRand=int(random(0,2));
   rRand=1-lRand;
   if (catchNum==1){
@@ -297,12 +305,13 @@ State S3_B(){
 }
 
 State S4_H(){
+  digitalWrite(stepperPin, HIGH);
+  blinkAlertPin(5,20);
   blinkBlue(5,20);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=52; 
   myservo.write(rewardPos);
-  digitalWrite(stepperPin, HIGH);
 }
 
 State S4_B(){
@@ -329,7 +338,10 @@ State S4_B(){
 }
 
 State S5_H(){
-  blinkTeal(8,20);
+  //blinkTeal(8,20);
+    digitalWrite(rPin, HIGH);
+  digitalWrite(gPin, HIGH);
+  digitalWrite(bPin, HIGH);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=53; 
@@ -434,6 +446,15 @@ void blinkTeal(int reps,int msInterval){
     digitalWrite(rPin, HIGH);
     digitalWrite(gPin, HIGH);
     digitalWrite(bPin, HIGH);
+    delay(msInterval);
+  }
+}
+
+void blinkAlertPin(int reps,int msInterval){
+  for (int n=0; n<reps; n++){
+    digitalWrite(alertPin, HIGH);
+    delay(msInterval);
+    digitalWrite(alertPin, LOW);
     delay(msInterval);
   }
 }

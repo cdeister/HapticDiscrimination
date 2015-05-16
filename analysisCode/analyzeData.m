@@ -14,9 +14,9 @@ flatData.stimChangePositions=flattenData(data.stimChangePositions);
 flatData.stimChangeRanges=flattenData(data.stimChangeRanges);
 flatData.leftVal=flattenData(data.leftExpectedVal);
 flatData.rightVal=flattenData(data.rightExpectedVal);
-flatData.stimDiff=abs(flatData.leftVal-flatData.rightVal);
+flatData.stimDiff=flatData.leftVal-flatData.rightVal;
 
-stimCalA=(900/25.4); % 9000 d/i * 1/25.4 in/mm
+stimCalA=(900/25.4); % 900 points/inch * 1/25.4 inch/mm
 
 %% if you want to fish out by state
 
@@ -57,45 +57,107 @@ for n=1:numel(resetPositions)-1
 end
 state_2.stimChangeRanges_byTrial{numel(resetPositions)+1}=state_2.stimChangeRanges(resetPositions(end)+1:end)';
 
-%%
-n=6;,figure,plot(state_2.positions_byTrial{n})
+state_2.stimDiff=flatData.stimDiff(find(flatData.states==2));
+state_2.stimDiff_byTrial{1}=state_2.stimDiff(1:resetPositions(1))';
+for n=1:numel(resetPositions)-1
+    state_2.stimDiff_byTrial{n+1}=state_2.stimDiff(resetPositions(n)+1:resetPositions(n+1))';
+end
+state_2.stimDiff_byTrial{numel(resetPositions)+1}=state_2.stimDiff(resetPositions(end)+1:end)';
+trialCount=numel(resetPositions)+1;
+%% Look at a trial
+n=1; figure,plot(state_2.positions_byTrial{n})
+hold all,plot(smooth(diff(smooth(state_2.positions_byTrial{n}))*1000,50))
 hold all,plot(state_2.stimChangePositions_byTrial{n},'k:')
 hold all,plot(state_2.stimChangePositions_byTrial{n}+state_2.stimChangeRanges_byTrial{n},'k:')
 
 %% Get HM etc.
-for n=5:numel(state_2.stimChangeRanges_byTrial)
+
+
+% get all hits
+for n=1:trialCount;
+    state2_lastPosition(:,n)=state_2.positions_byTrial{n}(end);
+    state2_switchPosition(:,n)=state_2.stimChangePositions_byTrial{n}(end);
+    state2_switchEnd(:,n)=state_2.stimChangeRanges_byTrial{n}(end);
     state2_hits(:,n)=ismember(state_2.positions_byTrial{n}(end),(state_2.stimChangePositions_byTrial{n}(end):state_2.stimChangePositions_byTrial{n}(end)+state_2.stimChangeRanges_byTrial{n}(end)));
+    state2_stimDiff(:,n)=state_2.stimDiff_byTrial{n}(end);
+
+end
+figure,plot(state2_hits)
+hold all,plot(smooth(state2_hits,10))
+hh=gcf;
+ylabel('hit/miss')
+xlabel('trial number')
+saveas(hh,'~/Desktop/engagment.png');
+legend('actual','smoothed')
+
+movThresh=1000;
+
+% are hits/misses biased to a distance?
+figure,nhist({state2_lastPosition(state2_hits(find(state2_lastPosition>movThresh))),state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh))==0))},'box')
+figure,nhist({state2_lastPosition(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff<0))),state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff<0))==0))},'box')
+figure,nhist({state2_lastPosition(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff>0))),state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff>0))==0))},'box')
+figure,nhist({state2_lastPosition(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff<0))),state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff<0))==0)),state2_lastPosition(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff>0))),state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff>0))==0))},'box')
+legend('left hit','left miss','right hit','right miss')
+
+lH=state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff>0))==0));
+rH=state2_lastPosition(find(state2_hits(find(state2_lastPosition>movThresh & state2_stimDiff<0))==0));
+% [cis,H,bsDist,pValEst]=bootstrapDif(lH,rH,1000,1)
+
+%% 'psychometrics'
+psyDelta=2000;
+movThresh=2000;
+trialBounds=[1:200];
+hits1{1}=find(state2_lastPosition(trialBounds)>movThresh & state2_switchPosition(trialBounds)<=movThresh+psyDelta & state2_hits(trialBounds)==1);
+miss1{1}=find(state2_lastPosition(trialBounds)>movThresh & state2_switchPosition(trialBounds)<=movThresh+psyDelta & state2_hits(trialBounds)==0);
+for n=2:12
+    hits1{n}=find(state2_switchPosition(trialBounds)>movThresh+(psyDelta*(n-1)) & state2_switchPosition(trialBounds)<=movThresh+(psyDelta*(n)) & state2_hits(trialBounds)==1);
+    miss1{n}=find(state2_switchPosition(trialBounds)>movThresh+(psyDelta*(n-1)) & state2_switchPosition(trialBounds)<=movThresh+(psyDelta*(n)) & state2_hits(trialBounds)==0);
 end
 
-%% deriv trigger
-clear derivCrossings dCrossPos
-derivThresh=700;
-for n=1:numel(state_2.positions_byTrial)
-    dCrossPos=find(state_2.positions_byTrial{n}>=derivThresh);
-   if numel(dCrossPos)>0
-    derivCrossings(:,n)=dCrossPos(1);
-   else
-    derivCrossings(:,n)=0;
-   end
+for n=1:12
+    hitRate(:,n)=numel(hits1{n})/(numel(hits1{n})+numel(miss1{n}));
 end
+figure,plot([10000:10000:10000*12]./stimCalA,hitRate)
+hh=gcf;
+ylabel('hit rate')
+xlabel('switch position in mm')
+saveas(hh,'~/Desktop/psycho.png');
+
 
 %% 
 clear state_2.thresholdAlignedPositions{n}
-attemptedCrosses=derivCrossings(find(derivCrossings>10));
 for n=1:numel(state_2.positions_byTrial)
     state_2.endTriggerChangePositions(:,n)=state_2.stimChangePositions_byTrial{n}(end);
     state_2.endTriggerPositions(:,n)=state_2.positions_byTrial{n}(end);
+    state_2.endTriggerStimDif(:,n)=state_2.stimDiff_byTrial{n}(end);
 end
 figure;
 h=gcf;
 clf; hold on;
 plot(state_2.endTriggerChangePositions,state_2.endTriggerPositions,'ko')
-a=70000;
+a=90000;
 plot(([0 1].*a)+0,([0 1].*a)+0,'k');
 ylabel('end position in points')
 xlabel('stim switch position in points')
 daspect([1 1 1]);
 saveas(h,'~/Desktop/shape2a.png')
+
+%%
+figure;
+h2=gcf;
+clf; hold on;
+plot(state_2.endTriggerChangePositions(state2_hits),state_2.endTriggerPositions(state2_hits),'ko')
+a=90000;
+plot(([0 1].*a)+0,([0 1].*a)+0,'k');
+ylabel('end position in points')
+xlabel('stim switch position in points')
+daspect([1 1 1]);
+figure,plot(state_2.endTriggerChangePositions(state2_hits==0),state_2.endTriggerPositions(state2_hits==0),'ko')
+% saveas(h2,'~/Desktop/shape2a.png')
+corr(state_2.endTriggerChangePositions(state2_hits)',state_2.endTriggerPositions(state2_hits)')
+
+%% Get misses, and types.
+
 
 %% 
 figure,hold all
