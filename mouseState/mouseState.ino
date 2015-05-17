@@ -44,12 +44,12 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Params
-long lFreq[]={800,0};
+long lFreq[]={300,0};
 int clickTime=1000;  // in microseconds
 long targPos=15000;
-long tRange=20000;
-long lowPos=8000;
-long highPos=50000;
+long tRange=8000;
+long lowPos= 2000;   //8000;
+long highPos=4000;   //50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
@@ -92,11 +92,11 @@ void setup()
     Serial.begin(115200);
     if (Usb.Init() == -1)
       Serial.println("OSC did not start.");
-    Serial.setTimeout(100);
+    Serial.setTimeout(2000);
     delay(200);
     
     beginTime=millis();
-    Serial.println("Start"); 
+    //Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     
     pinMode(rPin, OUTPUT);
@@ -158,8 +158,9 @@ State S1_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  if(Simple.Timeout(3000)) Simple.Set(S2_H,S2_B);
+  if(Simple.Timeout(4000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
+  if(sB==54) Simple.Set(S6_H,S6_B);
 }
 
 State S2_H(){
@@ -260,6 +261,7 @@ State S2_B(){
   if(sB==51) Simple.Set(S3_H,S3_B); // wait state
   if(sB==52) Simple.Set(S4_H,S4_B); // reward state
   if(sB==53) Simple.Set(S5_H,S5_B); // miss (punishment) state
+  if(sB==54) Simple.Set(S6_H,S6_B);
 }
 
 State S3_H(){
@@ -302,6 +304,7 @@ State S3_B(){
   // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
+  if(sB==54) Simple.Set(S6_H,S6_B);
 }
 
 State S4_H(){

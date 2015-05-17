@@ -13,12 +13,12 @@ for k=1:10
 clearvars -except k data exportPath saveName startTimeLog
 close all
 numTrials=1;
-sensorCal= 900/25.4;  % in mm
+sensorCal= 300/25.4;  % in mm
 toPlot=1;
 p_fps=20; % doesn't keep up below 5, but loop is still good.
 invert=0;
 yRange=[-500,6500];
-bufferSize=199;  %499 for debug mouse, 199 for production
+bufferSize=499;  %499 for debug mouse, 199 for production
 
 
 %%
