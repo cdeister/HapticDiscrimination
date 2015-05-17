@@ -34,7 +34,7 @@ arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial obj
 
 startTime = time.time()
 currentTime=0    
-while currentTime<=90+tOffset:
+while currentTime<=60+tOffset:
     while (arduino.inWaiting()==0): #Wait here until there is data
         pass #do nothing
     if currentState==1:    
@@ -130,3 +130,4 @@ arduino.write('6')
 arduino.close()
 plt.plot(pythonTime,positions)
 plt.pause(10)
+exit()
