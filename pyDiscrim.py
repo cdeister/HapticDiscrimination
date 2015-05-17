@@ -25,11 +25,11 @@ latch=0
 n=1
 currentState=1
 currentTrial=1
-trialGrace=3000
+trialGrace=2000
 bufferSize=499 # The crapier the mouse the higher this needs to be
 stopThreshold=1
 giveTerminalFeedback=1
-trialsToRun=100
+trialsToRun=10
 
 arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial object named arduinoData
 arduino.write('1')
@@ -76,14 +76,18 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                 displayLatch=1
                 print("trial #"),
                 print(trialCount[-1]),
-                print(" = hit")
+                print("= hit; elapsed time:"),
+                print(int(currentTime)),
+                print("seconds")
             arduino.write('4')
         elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-199:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:  
             if displayLatch==0:
                 displayLatch=1
                 print("trial #"),
                 print(trialCount[-1]),
-                print(" = miss")
+                print("= miss; elapsed time:"),
+                print(int(currentTime)),
+                print("seconds")
             arduino.write('5')
             
     elif currentState==3:
@@ -101,7 +105,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
         rightExpectedVal.append(int(arduino.readline().strip()))
         pythonTime.append(currentTime)
         currentState=states[-1]
-        if timeInStates[-1]>2000:
+        if timeInStates[-1]>1000:
             arduino.write('2')
     elif currentState==4:
         states.append(int(arduino.readline().strip()))
