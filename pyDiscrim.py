@@ -8,11 +8,12 @@ import time
 
 
 # behavior variables (you might want to change these)
+trialsToRun=100          # number of trials to collect
 trialGrace=2000         # in ms; this is the minimum time a trial (state 2) will run for
 bufferSize=499          # in samples; The crapier the mouse the higher this needs to be.
 stopThreshold=1         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
-trialsToRun=10          # number of trials to collect
+
 
 
 # initialize data containers (python lists)
@@ -109,7 +110,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                 plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'b--')
                 plt.ylabel('position')
                 plt.xlabel('time (ms)')
-                plt.title("trial # %d; Hit" % trialCount[-1])
+                plt.title("trial # %d; Miss" % trialCount[-1])
                 plt.pause(0.000001)
             arduino.write('5')
             
