@@ -1,18 +1,25 @@
-import serial # import Serial Library
-import numpy  # Import numpy
-import matplotlib.pyplot as plt #import matplotlib library
+# pyDiscrim: 
+#This script works with an optical mouse and an arduino for behavioral control intended for a tactile disctimination task in mice.
+#
+# 5/18/2015
+# questions? --> Chris Deister --> cdeister@Bbrown.edu
+#
+
+import serial 
+import numpy  
+import matplotlib.pyplot as plt 
 from drawnow import *
 import time
-
-
+import datetime
 
 
 # behavior variables (you might want to change these)
 trialsToRun=100          # number of trials to collect
-trialGrace=2000         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=499          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=1         # derivative crossing
+trialGrace=2500         # in ms; this is the minimum time a trial (state 2) will run for
+bufferSize=99          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=9         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
+plotFeedback=1
 
 
 
@@ -41,7 +48,7 @@ currentTrial=1
 plt.ion()
 
 # start serial communication
-arduino = serial.Serial('/dev/cu.usbmodem1461', 115200) #Creating our serial object named arduinoData
+arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial object named arduinoData
 arduino.write('1')
 
 # variables to track time
@@ -85,33 +92,45 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
         pythonTime.append(currentTime)
         currentState=states[-1]
         stimDif=leftExpectedVal[-1]-rightExpectedVal[-1]
-        if timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-199:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
+        if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
             if displayLatch==0:
                 displayLatch=1
                 hitRecord.append(1)
                 print("trial # %d") % trialCount[-1],
                 print("= hit; elapsed time: %.2f") % currentTime,
                 print("seconds; hit rate = %.2f") % numpy.mean(hitRecord)
-                plt.cla()
-                plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'b--')
-                plt.ylabel('position')
-                plt.xlabel('time (ms)')
-                plt.title("trial # %d; Hit" % trialCount[-1])
-                plt.pause(0.000001)
+                if plotFeedback==1:
+                	plt.cla()
+                	plt.subplot(2,1,1)
+                	plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'r--')
+                	plt.ylabel('position')
+                	plt.xlabel('time (ms)')
+                	plt.title("trial # %d; Hit" % trialCount[-1])
+                	plt.subplot(2,1,2)
+                	plt.plot(totalTime,states,'k-')
+                	plt.ylabel('state')
+                	plt.xlabel('time (ms)')
+                	plt.pause(0.000001)
             arduino.write('4')
-        elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-199:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:  
+        elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:  
             if displayLatch==0:
                 displayLatch=1
                 hitRecord.append(0)
                 print("trial # %d") % trialCount[-1],
                 print("= miss; elapsed time: %.2f") % currentTime,
                 print("seconds; hit rate = %.2f") % numpy.mean(hitRecord)
-                plt.cla()
-                plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'b--')
-                plt.ylabel('position')
-                plt.xlabel('time (ms)')
-                plt.title("trial # %d; Miss" % trialCount[-1])
-                plt.pause(0.000001)
+                if plotFeedback==1:
+                	plt.cla()
+                	plt.subplot(2,1,1)
+                	plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'r--')
+                	plt.ylabel('position')
+                	plt.xlabel('time (ms)')
+                	plt.title("trial # %d; Miss" % trialCount[-1])
+                	plt.subplot(2,1,2)
+                	plt.plot(totalTime,states,'k-')
+                	plt.ylabel('state')
+                	plt.xlabel('time (ms)')
+                	plt.pause(0.000001)
             arduino.write('5')
             
     elif currentState==3:
@@ -129,7 +148,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
         rightExpectedVal.append(int(arduino.readline().strip()))
         pythonTime.append(currentTime)
         currentState=states[-1]
-        if timeInStates[-1]>1000:
+        if timeInStates[-1]>500 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold:
             arduino.write('2')
     elif currentState==4:
         states.append(int(arduino.readline().strip()))
@@ -170,13 +189,14 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
         trialDif=trialCount[-1]-trialCount[-2]
         if trialDif==1:
             lastSample=len(pythonTime)
-            print lastSample
+            # print lastSample
             displayLatch=0     #This is for terminal feedback of trial flow
 
 # save data
+dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
 exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime])
 exportArray = exportArray[numpy.newaxis].T
-numpy.savetxt("foo4.csv", exportArray, delimiter=",",fmt='%f')
+numpy.savetxt("jv16_%s.csv" %dateString, exportArray, delimiter=",",fmt='%f')
 
 # clean up
 arduino.write('6')

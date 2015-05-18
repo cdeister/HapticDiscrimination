@@ -44,12 +44,12 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Params
-long lFreq[]={300,0};
+long lFreq[]={600,0};
 int clickTime=1000;  // in microseconds
-long targPos=15000;
-long tRange=8000;
-long lowPos= 2000;   //8000;
-long highPos=4000;   //50000;
+long targPos=12000;
+long tRange=30000;
+long lowPos= 9000;   //8000;
+long highPos=40000;   //50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
@@ -311,6 +311,9 @@ State S4_H(){
   digitalWrite(stepperPin, HIGH);
   blinkAlertPin(5,20);
   blinkBlue(5,20);
+  digitalWrite(rPin, HIGH);
+  digitalWrite(gPin, HIGH);
+  digitalWrite(bPin, LOW);
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=52; 
