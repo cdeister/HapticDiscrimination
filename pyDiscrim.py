@@ -8,7 +8,6 @@
 import serial
 import numpy
 import matplotlib.pyplot as plt
-from drawnow import *
 import time
 import datetime
 
