@@ -15,8 +15,8 @@ import datetime
 # behavior variables (you might want to change these)
 trialsToRun=100          # number of trials to collect
 trialGrace=2500         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=299          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=9         # derivative crossing
+bufferSize=99          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=5         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
 
