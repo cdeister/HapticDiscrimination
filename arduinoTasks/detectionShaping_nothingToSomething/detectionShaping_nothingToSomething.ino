@@ -47,9 +47,9 @@ int sB;
 long lFreq[]={0,600};
 int clickTime=1000;  // in microseconds
 long targPos=12000;
-long tRange=30000;
+long tRange=15000;
 long lowPos= 9000;   //8000;
-long highPos=40000;   //50000;
+long highPos=24000;   //50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
