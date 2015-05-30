@@ -14,10 +14,10 @@ import datetime
 
 
 # behavior variables (you might want to change these)
-trialsToRun=120          # number of trials to collect
+trialsToRun=200          # number of trials to collect
 trialGrace=3000         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=59          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=4         # derivative crossing
+bufferSize=69          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=7         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
 
@@ -51,7 +51,6 @@ plt.ion()
 
 
 # start serial communication
-# /dev/cu.usbmodem1421
 arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial object named arduinoData
 arduino.write('1')
 arduino.write('1')
@@ -118,7 +117,6 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             currentState=states[-1]
             stimDif=leftExpectedVal[-1]-rightExpectedVal[-1]
             if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
-                arduino.write('4')
                 if displayLatch==0:
                     displayLatch=1
                     hitRecord.append(1)
@@ -137,8 +135,8 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
+                    arduino.write('4')
             elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:
-                arduino.write('5')
                 if displayLatch==0:
                     displayLatch=1
                     hitRecord.append(0)
@@ -157,7 +155,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-                    
+                    arduino.write('5')
         
         elif currentState==3:
             states.append(int(arduino.readline().strip()))

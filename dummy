@@ -1,0 +1,8 @@
+import time
+from smooth.py import *
+
+smooth_demo()
+
+time.sleep(10)
+
+exit()

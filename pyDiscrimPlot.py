@@ -5,7 +5,6 @@
 # questions? --> Chris Deister --> cdeister@Bbrown.edu
 #
 
-
 import serial
 import numpy
 import matplotlib.pyplot as plt
@@ -14,10 +13,10 @@ import datetime
 
 
 # behavior variables (you might want to change these)
-trialsToRun=120          # number of trials to collect
-trialGrace=3000         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=59          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=4         # derivative crossing
+trialsToRun=20          # number of trials to collect
+trialGrace=2300         # in ms; this is the minimum time a trial (state 2) will run for
+bufferSize=99          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=7         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
 
@@ -48,30 +47,9 @@ currentState=1
 currentTrial=1
 plt.ion()
 
-
-
 # start serial communication
-# /dev/cu.usbmodem1421
 arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial object named arduinoData
 arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-arduino.write('1')
-
-
-
 
 # variables to track time
 startTime = time.time()
@@ -118,7 +96,6 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             currentState=states[-1]
             stimDif=leftExpectedVal[-1]-rightExpectedVal[-1]
             if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
-                arduino.write('4')
                 if displayLatch==0:
                     displayLatch=1
                     hitRecord.append(1)
@@ -137,8 +114,8 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
+                    arduino.write('4')
             elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:
-                arduino.write('5')
                 if displayLatch==0:
                     displayLatch=1
                     hitRecord.append(0)
@@ -157,7 +134,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-                    
+                    arduino.write('5')
         
         elif currentState==3:
             states.append(int(arduino.readline().strip()))
@@ -214,6 +191,17 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
         currentTrial=trialCount[-1]
         trialDif=currentTrial-lastTrial
         lastTrial=currentTrial
+        if plotFeedback==1 and n%5==0:
+            plt.cla()
+            plt.subplot(2,1,1)
+            plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'r--')
+            plt.ylabel('position')
+            plt.xlabel('time (ms)')
+            plt.subplot(2,1,2)
+            plt.plot(totalTime,states,'k-')
+            plt.ylabel('state')
+            plt.xlabel('time (ms)')
+            plt.pause(0.000001)
         if trialDif==1:
             lastSample=len(pythonTime)        #<-- Place holder for real time graph stuff.
             print lastSample
@@ -221,7 +209,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
 
     except:
         dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
-        if len(states)>20:
+        if len(states)>0:
             tempLen=[len(states),len(positions),len(deltas),len(timeInStates),len(totalTime),len(trialCount),len(stimChangePositions),len(stimChangeRanges),len(clickTrainLeft),len(clickTrainRight),len(pythonTime)]
             smallestList=tempLen.index(min(tempLen))
             smallestLength=tempLen[smallestList]
@@ -244,7 +232,6 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             print ('saved your shit homes')
         elif len(states)==0:
             print('bad serial read; restart')
-
         exit()           
 
 

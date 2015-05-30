@@ -44,11 +44,11 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Params
-long lFreq[]={0,600};
+long lFreq[]={600,0};  //baseline,stim
 int clickTime=1000;  // in microseconds
 long targPos=12000;
-long tRange=15000;
-long lowPos= 9000;   //8000;
+long tRange=30000;  //15000
+long lowPos= 7000;   //8000;
 long highPos=24000;   //50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
@@ -81,6 +81,7 @@ int catchNum;           // random integer that will trip catch condition
 # define servoPin 9
 # define stepperPin 12
 # define alertPin 11
+# define cameraPin 2
 
 SM Simple(S1_H, S1_B); // Trial State Machine
 
@@ -92,10 +93,10 @@ void setup()
     Serial.begin(115200);
     if (Usb.Init() == -1)
       Serial.println("OSC did not start.");
-    Serial.setTimeout(2000);
-    delay(200);
+    //Serial.setTimeout(4000);
+    delay(800);
     
-    beginTime=millis();
+    //beginTime=millis();
     //Serial.println("Start"); 
     HidMouse.SetReportParser(0,(HIDReportParser*)&Prs);
     
@@ -106,6 +107,7 @@ void setup()
     pinMode(clickPinR,OUTPUT);
     pinMode(stepperPin,OUTPUT);
     pinMode(alertPin,OUTPUT);
+    pinMode(cameraPin,OUTPUT);
     
     digitalWrite(rPin, HIGH);
     digitalWrite(gPin, HIGH);
@@ -114,6 +116,7 @@ void setup()
     digitalWrite(clickPinR, LOW);
     digitalWrite(stepperPin,LOW);
     digitalWrite(alertPin,LOW);
+    digitalWrite(cameraPin, LOW);
     
     myservo.attach(servoPin);
     myservo.write(restPos); 
@@ -132,6 +135,8 @@ void loop()
 //------------ State Definitions
 
 State S1_H(){
+  beginTime=millis();
+  digitalWrite(cameraPin, HIGH);
   digitalWrite(rPin, LOW);
   digitalWrite(gPin, HIGH);
   digitalWrite(bPin, LOW);
@@ -301,7 +306,7 @@ State S3_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  // if(Simple.Timeout(10000)) Simple.Set(S2_H,S2_B);
+  //if(Simple.Timeout(2000)) Simple.Set(S2_H,S2_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
   if(sB==54) Simple.Set(S6_H,S6_B);
@@ -386,7 +391,7 @@ State S6_H(){
 State S6_B(){
   tS=Simple.Statetime();
   sB=lookForSerial();
-  if(Simple.Timeout(1500))  Simple.Set(S3_H,S3_B);
+  if(Simple.Timeout(500))  Simple.Set(S3_H,S3_B);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
   if(sB==51) Simple.Set(S3_H,S3_B);

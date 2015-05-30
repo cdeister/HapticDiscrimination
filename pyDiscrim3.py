@@ -14,10 +14,11 @@ import datetime
 
 
 # behavior variables (you might want to change these)
-trialsToRun=120          # number of trials to collect
+trialsToRun=100          # number of trials to collect
 trialGrace=3000         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=59          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=4         # derivative crossing
+trackerSize=70          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=7         # derivative crossing
+minStopTime=1000        # minimum time to be stopped to initate a trial
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
 
@@ -41,6 +42,9 @@ hitRecord=[]
 sampleBreaks=[]
 lastTrial=1  # I will use this to gate a latch when there is a new trial.
 
+# closed loop model variables
+movementTracker=[100] * trackerSize
+
 # flow variables (shouldn't need to mess with these)
 n=1
 displayLatch=0
@@ -51,7 +55,6 @@ plt.ion()
 
 
 # start serial communication
-# /dev/cu.usbmodem1421
 arduino = serial.Serial('/dev/cu.usbmodem1421', 115200) #Creating our serial object named arduinoData
 arduino.write('1')
 arduino.write('1')
@@ -117,7 +120,9 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             pythonTime.append(currentTime)
             currentState=states[-1]
             stimDif=leftExpectedVal[-1]-rightExpectedVal[-1]
-            if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
+            movementTracker.pop(0)
+            movementTracker.append(numpy.abs(deltas[-1]))
+            if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(movementTracker)<stopThreshold and positions[-1]<stimChangePositions[-1]:
                 arduino.write('4')
                 if displayLatch==0:
                     displayLatch=1
@@ -137,7 +142,9 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-            elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:
+
+
+            elif timeInStates[-1]>trialGrace and numpy.mean(movementTracker)<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:
                 arduino.write('5')
                 if displayLatch==0:
                     displayLatch=1
@@ -157,7 +164,6 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-                    
         
         elif currentState==3:
             states.append(int(arduino.readline().strip()))
@@ -174,7 +180,9 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             rightExpectedVal.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
-            if timeInStates[-1]>1500 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold:
+            movementTracker.pop(0)
+            movementTracker.append(numpy.abs(deltas[-1]))
+            if timeInStates[-1]>minStopTime and numpy.mean(movementTracker)<stopThreshold:
                 arduino.write('2')
         
         elif currentState==4:
@@ -243,7 +251,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             arduino.close()
             print ('saved your shit homes')
         elif len(states)==0:
-            print('bad serial read; restart')
+            print('bad serial read; restart ... please ---> :) <---')
 
         exit()           
 
