@@ -14,12 +14,13 @@ import datetime
 
 
 # behavior variables (you might want to change these)
-trialsToRun=120          # number of trials to collect
+trialsToRun=150          # number of trials to collect
 trialGrace=3000         # in ms; this is the minimum time a trial (state 2) will run for
-bufferSize=59          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=4         # derivative crossing
+bufferSize=39          # in samples; The crapier the mouse the higher this needs to be.
+stopThreshold=6         # derivative crossing
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
+trackerSize=35          # in samples; The crapier the mouse the higher this needs to be.
 
 
 
@@ -36,6 +37,7 @@ clickTrainLeft=[]
 clickTrainRight=[]
 leftExpectedVal=[]
 rightExpectedVal=[]
+trialType=[]
 pythonTime=[]
 hitRecord=[]
 sampleBreaks=[]
@@ -47,6 +49,9 @@ displayLatch=0
 currentState=1
 currentTrial=1
 plt.ion()
+
+# closed loop model variables
+movementTracker=[100] * trackerSize
 
 
 
@@ -98,6 +103,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainRight.append(int(arduino.readline().strip()))
             leftExpectedVal.append(int(arduino.readline().strip()))
             rightExpectedVal.append(int(arduino.readline().strip()))
+            trialType.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
 
@@ -114,10 +120,13 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainRight.append(int(arduino.readline().strip()))
             leftExpectedVal.append(int(arduino.readline().strip()))
             rightExpectedVal.append(int(arduino.readline().strip()))
+            trialType.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
             stimDif=leftExpectedVal[-1]-rightExpectedVal[-1]
-            if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1]:
+            movementTracker.pop(0)
+            movementTracker.append(numpy.abs(deltas[-1]))
+            if timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(movementTracker)<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1] and trialType[-1] != 1:
                 arduino.write('4')
                 if displayLatch==0:
                     displayLatch=1
@@ -137,7 +146,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-            elif timeInStates[-1]>trialGrace and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1]:
+            elif timeInStates[-1]>trialGrace and numpy.mean(movementTracker)<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1] and trialType[-1] != 1:
                 arduino.write('5')
                 if displayLatch==0:
                     displayLatch=1
@@ -157,7 +166,46 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
                         plt.ylabel('state')
                         plt.xlabel('time (ms)')
                         plt.pause(0.000001)
-                    
+            elif timeInStates[-1]>trialGrace and numpy.mean(movementTracker)<stopThreshold and positions[-1]<stimChangePositions[-1] or positions[-1]>stimChangePositions[-1]+stimChangeRanges[-1] and trialType[-1] == 1:
+                arduino.write('3')
+                if displayLatch==0:
+                    displayLatch=1
+                    hitRecord.append(2)
+                    print("trial # %d") % trialCount[-1],
+                    print("= correct rejection; elapsed time: %.2f") % currentTime,
+                    print("seconds; hit rate = %.2f") % numpy.mean(hitRecord)
+                    if plotFeedback==1:
+                        plt.cla()
+                        plt.subplot(2,1,1)
+                        plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'r--')
+                        plt.ylabel('position')
+                        plt.xlabel('time (ms)')
+                        plt.title("trial # %d; Correct Rejection" % trialCount[-1])
+                        plt.subplot(2,1,2)
+                        plt.plot(totalTime,states,'k-')
+                        plt.ylabel('state')
+                        plt.xlabel('time (ms)')
+                        plt.pause(0.000001)  
+            elif timeInStates[-1]>trialGrace and stimDif !=0 and numpy.mean(movementTracker)<stopThreshold and positions[-1]>stimChangePositions[-1] and positions[-1]<=stimChangePositions[-1]+stimChangeRanges[-1] and trialType[-1] == 1:
+                arduino.write('5')
+                if displayLatch==0:
+                    displayLatch=1
+                    hitRecord.append(3)
+                    print("trial # %d") % trialCount[-1],
+                    print("= fasle alarm; elapsed time: %.2f") % currentTime,
+                    print("seconds; hit rate = %.2f") % numpy.mean(hitRecord)
+                    if plotFeedback==1:
+                        plt.cla()
+                        plt.subplot(2,1,1)
+                        plt.plot(totalTime,positions,'k-',totalTime,stimChangePositions,'r--',totalTime,numpy.add(stimChangePositions,stimChangeRanges),'r--')
+                        plt.ylabel('position')
+                        plt.xlabel('time (ms)')
+                        plt.title("trial # %d; False Alarm" % trialCount[-1])
+                        plt.subplot(2,1,2)
+                        plt.plot(totalTime,states,'k-')
+                        plt.ylabel('state')
+                        plt.xlabel('time (ms)')
+                        plt.pause(0.000001)             
         
         elif currentState==3:
             states.append(int(arduino.readline().strip()))
@@ -172,8 +220,11 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainRight.append(int(arduino.readline().strip()))
             leftExpectedVal.append(int(arduino.readline().strip()))
             rightExpectedVal.append(int(arduino.readline().strip()))
+            trialType.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
+            movementTracker.pop(0)
+            movementTracker.append(numpy.abs(deltas[-1]))
             if timeInStates[-1]>1500 and numpy.mean(numpy.abs(deltas[-bufferSize:-1]))<stopThreshold:
                 arduino.write('2')
         
@@ -190,6 +241,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainRight.append(int(arduino.readline().strip()))
             leftExpectedVal.append(int(arduino.readline().strip()))
             rightExpectedVal.append(int(arduino.readline().strip()))
+            trialType.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
         
@@ -206,6 +258,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainRight.append(int(arduino.readline().strip()))
             leftExpectedVal.append(int(arduino.readline().strip()))
             rightExpectedVal.append(int(arduino.readline().strip()))
+            trialType.append(int(arduino.readline().strip()))
             pythonTime.append(currentTime)
             currentState=states[-1]
     	
@@ -222,7 +275,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
     except:
         dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
         if len(states)>20:
-            tempLen=[len(states),len(positions),len(deltas),len(timeInStates),len(totalTime),len(trialCount),len(stimChangePositions),len(stimChangeRanges),len(clickTrainLeft),len(clickTrainRight),len(pythonTime)]
+            tempLen=[len(states),len(positions),len(deltas),len(timeInStates),len(totalTime),len(trialCount),len(stimChangePositions),len(stimChangeRanges),len(clickTrainLeft),len(clickTrainRight),len(pythonTime),len(trialType)]
             smallestList=tempLen.index(min(tempLen))
             smallestLength=tempLen[smallestList]
             states=states[0:smallestLength]
@@ -236,7 +289,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainLeft=clickTrainLeft[0:smallestLength]
             clickTrainRight=clickTrainRight[0:smallestLength]
             pythonTime=pythonTime[0:smallestLength]
-            exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime])
+            exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime,trialType])
             exportArray = exportArray[numpy.newaxis].T
             numpy.savetxt("jv16_%s_temp.csv" %dateString, exportArray, delimiter=",",fmt='%f')
             arduino.write('6')
@@ -250,7 +303,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
 
 # save data
 dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
-exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime])
+exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime,trialType])
 exportArray = exportArray[numpy.newaxis].T
 numpy.savetxt("jv16_%s.csv" %dateString, exportArray, delimiter=",",fmt='%f')
 

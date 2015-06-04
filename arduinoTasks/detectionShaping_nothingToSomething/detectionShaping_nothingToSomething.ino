@@ -44,12 +44,12 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Params
-long lFreq[]={600,0};  //baseline,stim
+long lFreq[]={0,300};  //baseline,stim
 int clickTime=1000;  // in microseconds
 long targPos=12000;
-long tRange=30000;  //15000
+long tRange=20000;  //15000
 long lowPos= 7000;   //8000;
-long highPos=24000;   //50000;
+long highPos=25000;   //50000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
@@ -71,7 +71,7 @@ int positionToggle;
 int temp_lRand;
 int temp_rRand;
 int tCount=1;
-int catchNum;           // random integer that will trip catch condition
+int catchNum=0;           // random integer that will trip catch condition
 
 # define rPin 6
 # define gPin 5
@@ -163,13 +163,13 @@ State S1_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
+  Serial.println(catchNum);
   if(Simple.Timeout(4000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
   if(sB==54) Simple.Set(S6_H,S6_B);
 }
 
 State S2_H(){
-  //blinkGreen(5,30);
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, LOW);
   digitalWrite(bPin, HIGH);
@@ -184,7 +184,6 @@ State S2_H(){
   clickDeltaL=0;
   clickDeltaR=0;
   temp_lRand=lFreq[lRand];
-  //temp_rRand=lFreq[rRand];
   clickPosL=getNextClickTarget(temp_lRand);
   clickPosR=clickPosL;
   previousToggle=1;
@@ -196,19 +195,28 @@ State S2_B(){
     lastPos=Prs.curPos;
     clickDeltaL=clickDeltaL+abs(mouseDelta);
     clickDeltaR=clickDeltaL;
-    if (Prs.curPos>=targPos && Prs.curPos<=targPos+tRange){
+    
+    // ---- This block determines what to do with the stimulus based on a position condition ----
+    if (Prs.curPos>=targPos && Prs.curPos<=targPos+tRange && catchNum!=1){
       positionToggle=1;
-    }
+    } // if this isn't a catch trial, then switch the stimulus somehow
+    else if (Prs.curPos>=targPos && Prs.curPos<=targPos+tRange && catchNum==1){
+      positionToggle=0;
+    } // if this is a catch trial, then don't switch
     else if (Prs.curPos<targPos){
       positionToggle=0;
-    }
-    else if (Prs.curPos>targPos+tRange){
+    } // if below the switch position keep it the same (default condition)
+    else if (Prs.curPos>targPos+tRange && catchNum!=1){
       Simple.Set(S5_H,S5_B);
-    }
+    } // if the animal runs off, and it isn't a catch, then send to timeout state (miss)
+    else if (Prs.curPos>targPos+tRange && catchNum==1){  // If this is a catch-trial, then don't timeout if he runs off.
+      Simple.Set(S3_H,S3_B);  
+    } // if the animal runs off, and it is a catch, then put back to wait state (correct-rejection)
+    // ---- end position condition block
     
+    // ---- this block is concerned with updating the click train
     if (positionToggle==0 && previousToggle==1){
       temp_lRand=lFreq[lRand];
-      //temp_rRand=lFreq[rRand];
       clickPosL=getNextClickTarget(temp_lRand);
       clickPosR=clickPosL;
       clickDeltaL=0;
@@ -246,6 +254,7 @@ State S2_B(){
    else if (clickDeltaR < clickPosR) {
      clickRBool=0;
    }
+  // ---- end click train block
   
   tS=Simple.Statetime();
   Serial.println(2);
@@ -261,6 +270,7 @@ State S2_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
+  Serial.println(catchNum);
   previousToggle=positionToggle;
   if(Simple.Timeout(trialTimeout)) Simple.Set(S3_H,S3_B);
   if(sB==51) Simple.Set(S3_H,S3_B); // wait state
@@ -280,13 +290,9 @@ State S3_H(){
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
   //tRange=2*targPos;
-  catchNum=0;
+  catchNum=random(0,11);  //to-do add variable to scale % of catch trials. 
   lRand=0;
-  rRand=1;
-  if (catchNum==1){
-    rRand=lRand;
-  }
-  lastPos=Prs.curPos;  
+  rRand=1; 
 }
 
 State S3_B(){
@@ -306,7 +312,7 @@ State S3_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
-  //if(Simple.Timeout(2000)) Simple.Set(S2_H,S2_B);
+  Serial.println(catchNum);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
   if(sB==54) Simple.Set(S6_H,S6_B);
@@ -314,7 +320,7 @@ State S3_B(){
 
 State S4_H(){
   digitalWrite(stepperPin, HIGH);
-  blinkAlertPin(5,20);
+  blinkAlertPin(8,20);
   blinkBlue(5,20);
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, HIGH);
@@ -342,6 +348,7 @@ State S4_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
+  Serial.println(catchNum);
   if (tS>stepperTime){
     digitalWrite(stepperPin,LOW);
   }
@@ -375,6 +382,7 @@ State S5_B(){
   Serial.println(clickRBool);
   Serial.println(lFreq[lRand]);
   Serial.println(lFreq[rRand]);
+  Serial.println(catchNum);
   if(Simple.Timeout(timeoutTime))  Simple.Set(S3_H,S3_B);
 }
 

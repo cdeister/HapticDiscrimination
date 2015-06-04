@@ -81,8 +81,6 @@ st3.endPositions=st3.positions(st3.trialEnds(st3.allTrials));
 st3.endTargets=st3.targetPositions(st3.trialEnds(st3.allTrials));
 st3.endTargetRanges=st3.targetRanges(st3.trialEnds(st3.allTrials));
 
-hitTrials=find(st2.endPositions>=st2.endTargets & st2.endPositions<st2.endTargets+st2.endTargetRanges);
-fauxHitTrials=find(st3.endPositions>=st3.endTargets & st3.endPositions<st3.endTargets+st3.endTargetRanges);
 
 passThreshold=3000;
 skippedTrials=find(st2.endPositions<=passThreshold);
@@ -90,9 +88,12 @@ fauxSkippedTrials=find(st3.endPositions<=passThreshold);
 attemptedTrials=setdiff(st2.allTrials,skippedTrials);
 fauxAttemptedTrials=setdiff(st3.allTrials,fauxSkippedTrials);
 
-st2.hitPlot=zeros(size(st2.allTrials));
+hitTrials=find(st2.endPositions(attemptedTrials)>=st2.endTargets(attemptedTrials) & st2.endPositions(attemptedTrials)<st2.endTargets(attemptedTrials)+(st2.endTargetRanges(attemptedTrials)/2));
+fauxHitTrials=find(st3.endPositions(fauxAttemptedTrials)>=st3.endTargets(fauxAttemptedTrials) & st3.endPositions(fauxAttemptedTrials)<st3.endTargets(fauxAttemptedTrials)+(st3.endTargetRanges(fauxAttemptedTrials)/2));
+
+st2.hitPlot=zeros(size(attemptedTrials));
 st2.hitPlot(hitTrials)=1;
-st3.hitPlot=zeros(size(st3.allTrials));
+st3.hitPlot=zeros(size(fauxAttemptedTrials));
 st3.hitPlot(fauxHitTrials)=1;
 figure,plot(smooth(st2.hitPlot,20))
 hold all,plot(smooth(st3.hitPlot,20))
@@ -126,6 +127,68 @@ ht.zScore=(ht.hitCount-ht.meanEst)/ht.sdEst;
 
 bStats.dPrimeEst=ht.zScore-fa.zScore
 
+%% shuffle things
+
+
+st2.shuffledEnds=shuffleTrialsSimp(st2.endPositions(attemptedTrials),1);
+st3.shuffledEnds=shuffleTrialsSimp(st3.endPositions(fauxAttemptedTrials),1);
+st2.shuffledTargets=shuffleTrialsSimp(st2.endTargets(attemptedTrials),1);
+st3.shuffledTargets=shuffleTrialsSimp(st3.endTargets(fauxAttemptedTrials),1);
+
+figure,plot(st2.endPositions(attemptedTrials),'k-')
+hold all,plot(st2.shuffledEnds,'b-')
+
+shuffled_hitTrials=find(st2.shuffledEnds>=st2.shuffledTargets & st2.shuffledEnds<st2.shuffledTargets+(st2.endTargetRanges(attemptedTrials)/2)');
+shuffled_fauxHitTrials=find(st3.shuffledEnds'>=st3.endTargets(fauxAttemptedTrials) & st3.shuffledEnds'<st3.endTargets(fauxAttemptedTrials)+(st3.endTargetRanges(fauxAttemptedTrials)/2));
+
+st2.hitPlot=zeros(size(attemptedTrials));
+st2.hitPlot(shuffled_hitTrials)=1;
+st3.hitPlot=zeros(size(fauxAttemptedTrials));
+st3.hitPlot(shuffled_fauxHitTrials)=1;
+numel(hitTrials)
+numel(shuffled_hitTrials)
+
+figure, plot(sort(st2.endPositions(attemptedTrials)))
+hold all, plot(sort(st2.shuffledEnds),'b:')
+%% d-prime estimate (with shuffle)
+bProb=0.5;      
+% technically the prob should be some normalized distance metric, 
+% but the hypotesis is that the animal is detecting a stimulus change 
+% above chance, so I think it is fair to treat the faux distribution as
+% 0.5. If anything this is more conservative.
+
+fa.attemptedCount=numel(fauxAttemptedTrials);
+fa.shuf_hitCount=numel(shuffled_fauxHitTrials);
+
+fa.meanEst=(fa.attemptedCount)*0.5;
+fa.sdEst=((fa.attemptedCount)*0.5)*(1-bProb);
+fa.shuf_zScore=(fa.shuf_hitCount-fa.meanEst)/fa.sdEst;
+
+ht.attemptedCount=numel(attemptedTrials);
+ht.shuf_hitCount=numel(shuffled_hitTrials);
+
+ht.meanEst=(ht.attemptedCount)*0.5;
+ht.sdEst=((ht.attemptedCount)*0.5)*(1-bProb);
+ht.shuf_zScore=(ht.shuf_hitCount-ht.meanEst)/ht.sdEst;
+
+bStats.shuf_dPrimeEst=ht.shuf_zScore-fa.shuf_zScore
+bStats.randDP=(ht.zScore-ht.shuf_zScore)
+%%
+bs_positions=st2.endPositions(attemptedTrials);
+bs_targets=st2.endTargets(attemptedTrials);
+bs_ranges=st2.endTargetRanges(attemptedTrials);
+bs_ranges=bs_ranges';
+
+parfor n=1:1000
+    shuffledEnds=shuffleTrialsSimp(bs_positions,1);
+    shuffledTargets=shuffleTrialsSimp(bs_targets,1);
+    shuffled_hitTrials=find(shuffledEnds>=shuffledTargets & shuffledEnds<shuffledTargets+(bs_ranges/2));
+    shufCount(n,:)=numel(shuffled_hitTrials);
+end
+
+prob=numel(find(shufCount>=numel(hitTrials)))/numel(shufCount)
+
+
 %% plot all attempted trials
 figure,hold all,
 h=gcf;
@@ -139,13 +202,23 @@ saveas(h,'~/Desktop/shape.png')
 %% plot only hit trials and 'false alarms'
 
 figure,hold all,
-plot(st2.endTargets(hitTrials),st2.endPositions(hitTrials),'ko')
-plot(st3.endTargets(fauxHitTrials),st3.endPositions(fauxHitTrials),'bo')
+plot(st2.endTargets(attemptedTrials(hitTrials)),st2.endPositions(attemptedTrials(hitTrials)),'ko')
+plot(st3.endTargets(fauxAttemptedTrials(fauxHitTrials)),st3.endPositions(fauxAttemptedTrials(fauxHitTrials)),'bo')
 a=30000;
 plot(([0 1].*a)+0,([0 1].*a)+0,'k');
 title(['r= ' num2str(corr(st2.endTargets(hitTrials),st2.endPositions(hitTrials))) ' ; n=' num2str(numel(hitTrials)) ' r= ' num2str(corr(st3.endTargets(fauxHitTrials),st3.endPositions(fauxHitTrials))) ' ; n=' num2str(numel(fauxHitTrials))])
 % saveas(h,'~/Desktop/shape3a.png')
 
+%% plot only hit trials and 'false alarms' shuffle
+
+figure,hold all,
+plot(st2.endTargets(attemptedTrials(shuffled_hitTrials)),st2.shuffledEnds(shuffled_hitTrials),'ko')
+plot(st2.endTargets(attemptedTrials(hitTrials)),st2.endPositions(attemptedTrials(hitTrials)),'ro')
+
+a=30000;
+plot(([0 1].*a)+0,([0 1].*a)+0,'k');
+title(['r= ' num2str(corr(st2.endTargets(attemptedTrials(shuffled_hitTrials)),st2.shuffledEnds(shuffled_hitTrials)')) ' ; n=' num2str(numel(hitTrials)) ' r= ' num2str(corr(st2.endTargets(attemptedTrials(hitTrials)),st2.endPositions(attemptedTrials(hitTrials)))) ' ; n=' num2str(numel(fauxHitTrials))])
+% saveas(h,'~/Desktop/shape3a.png')
 %% look at click train with position state 2
 figure,plot(st2.flatTime/1000,smooth(st2.positions,100))
 hold all,plot(st2.flatTime/1000,st2.leftClicks*30000)
