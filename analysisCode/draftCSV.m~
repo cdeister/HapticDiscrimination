@@ -257,13 +257,11 @@ hold all,plot(circshift(st2.time_ByTrial{n}(3:end),75),smooth(smooth(diff(diff(s
 
 
 %% production by trial
-n=21;
 close all
 figure,plot(st2.pos_ByTrial{attemptedTrials(n)})
 hold all,plot(smooth(diff(smooth(st2.pos_ByTrial{attemptedTrials(n)},10))*100,10))
 hold all,plot(smooth(smooth(diff(diff(smooth(st2.pos_ByTrial{attemptedTrials(n)},10))*100)*10,10)))
-figure,plot(st2.pos_ByTrial{attemptedTrials(n)},st2.leftClicks_ByTrial{attemptedTrials(n)}*100)
-hold all,plot(st2.pos_ByTrial{attemptedTrials(n)}(3:end),smooth(smooth(diff(diff(smooth(st2.pos_ByTrial{attemptedTrials(n)},10))*100),10)))
+figure,plot(st2.pos_ByTrial{attemptedTrials(n)},)
 n=n+1;
 
 

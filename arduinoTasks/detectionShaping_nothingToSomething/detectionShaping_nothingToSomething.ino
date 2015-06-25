@@ -44,17 +44,18 @@ int lastKnownState=49;
 int sB;
 
 //**** Trial Params
-long lFreq[]={0,300};  //baseline,stim
+long lFreq[]={350,0};  //baseline,stim
 int clickTime=1000;  // in microseconds
-long targPos=12000;
-long tRange=20000;  //15000
-long lowPos= 7000;   //8000;
-long highPos=25000;   //50000;
+long targPos=10000;  //12000
+long tRange=10000;  //8000
+long lowPos= 12000;   //7000;
+long highPos=45500;   //23000;
 int rewardTime=2000;    // in ms
 int stepperTime=100;    // in ms
 int timeoutTime=5000;   // in ms
 int trialTimeout=60000; // in ms
-int catchProb=10;       // in % (p*100)
+int catchProb=100;       // in % (p*100)
+int mixTypes=1;
 
 
 //*** Trial Variables
@@ -72,6 +73,8 @@ int temp_lRand;
 int temp_rRand;
 int tCount=1;
 int catchNum=0;           // random integer that will trip catch condition
+int fRand_pr=0;
+int fRand_po=1;
 
 # define rPin 6
 # define gPin 5
@@ -136,7 +139,6 @@ void loop()
 
 State S1_H(){
   beginTime=millis();
-  digitalWrite(cameraPin, HIGH);
   digitalWrite(rPin, LOW);
   digitalWrite(gPin, HIGH);
   digitalWrite(bPin, LOW);
@@ -161,8 +163,8 @@ State S1_B(){
   Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
-  Serial.println(lFreq[lRand]);
-  Serial.println(lFreq[rRand]);
+  Serial.println(lFreq[fRand_pr]);
+  Serial.println(lFreq[fRand_po]);
   Serial.println(catchNum);
   if(Simple.Timeout(4000)) Simple.Set(S2_H,S2_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
@@ -178,12 +180,20 @@ State S2_H(){
   delayMicroseconds(clickTime);
   digitalWrite(clickPinR,LOW);
   digitalWrite(clickPinL,LOW);
+  if (mixTypes==1){
+    if (fRand_pr==0){
+      tone(alertPin,4000,800);
+    }
+    else if (fRand_pr==1){
+      tone(alertPin,1400,800);
+    }
+  }
   lastPos=Prs.curPos;
   Prs.curPos=0;
   lastKnownState=50;
   clickDeltaL=0;
   clickDeltaR=0;
-  temp_lRand=lFreq[lRand];
+  temp_lRand=lFreq[fRand_pr];
   clickPosL=getNextClickTarget(temp_lRand);
   clickPosR=clickPosL;
   previousToggle=1;
@@ -216,14 +226,14 @@ State S2_B(){
     
     // ---- this block is concerned with updating the click train
     if (positionToggle==0 && previousToggle==1){
-      temp_lRand=lFreq[lRand];
+      temp_lRand=lFreq[fRand_pr];
       clickPosL=getNextClickTarget(temp_lRand);
       clickPosR=clickPosL;
       clickDeltaL=0;
       clickDeltaR=0;
     }
     else if (positionToggle==1 && previousToggle==0){
-      temp_lRand=lFreq[rRand];
+      temp_lRand=lFreq[fRand_po];
       //temp_rRand=lFreq[lRand];
       clickPosL=getNextClickTarget(temp_lRand);
       clickPosR=clickPosL;
@@ -268,8 +278,8 @@ State S2_B(){
   Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
-  Serial.println(lFreq[lRand]);
-  Serial.println(lFreq[rRand]);
+  Serial.println(lFreq[fRand_pr]);
+  Serial.println(lFreq[fRand_po]);
   Serial.println(catchNum);
   previousToggle=positionToggle;
   if(Simple.Timeout(trialTimeout)) Simple.Set(S3_H,S3_B);
@@ -289,10 +299,15 @@ State S3_H(){
   myservo.write(restPos);
   tCount=tCount+1;
   targPos=random(lowPos, highPos);
-  //tRange=2*targPos;
-  catchNum=random(0,11);  //to-do add variable to scale % of catch trials. 
+  catchNum=random(0,catchProb+1);  //to-do add variable to scale % of catch trials. 
   lRand=0;
-  rRand=1; 
+  rRand=1;
+  if (mixTypes==1){
+    fRand_pr=random(0,2);
+    fRand_po=1-fRand_pr;
+  } 
+  digitalWrite(cameraPin, HIGH);
+ 
 }
 
 State S3_B(){
@@ -310,8 +325,8 @@ State S3_B(){
   Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
-  Serial.println(lFreq[lRand]);
-  Serial.println(lFreq[rRand]);
+  Serial.println(lFreq[fRand_pr]);
+  Serial.println(lFreq[fRand_po]);
   Serial.println(catchNum);
   if(sB==49) Simple.Set(S1_H,S1_B);
   if(sB==50) Simple.Set(S2_H,S2_B);
@@ -320,8 +335,8 @@ State S3_B(){
 
 State S4_H(){
   digitalWrite(stepperPin, HIGH);
-  blinkAlertPin(8,20);
   blinkBlue(5,20);
+  tone(alertPin,600,800);
   digitalWrite(rPin, HIGH);
   digitalWrite(gPin, HIGH);
   digitalWrite(bPin, LOW);
@@ -346,8 +361,8 @@ State S4_B(){
   Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
-  Serial.println(lFreq[lRand]);
-  Serial.println(lFreq[rRand]);
+  Serial.println(lFreq[fRand_pr]);
+  Serial.println(lFreq[fRand_po]);
   Serial.println(catchNum);
   if (tS>stepperTime){
     digitalWrite(stepperPin,LOW);
@@ -356,8 +371,8 @@ State S4_B(){
 }
 
 State S5_H(){
-  //blinkTeal(8,20);
-    digitalWrite(rPin, HIGH);
+  tone(alertPin,250,800);
+  digitalWrite(rPin, HIGH);
   digitalWrite(gPin, HIGH);
   digitalWrite(bPin, HIGH);
   lastPos=Prs.curPos;
@@ -380,8 +395,8 @@ State S5_B(){
   Serial.println(tRange);
   Serial.println(clickLBool);
   Serial.println(clickRBool);
-  Serial.println(lFreq[lRand]);
-  Serial.println(lFreq[rRand]);
+  Serial.println(lFreq[fRand_pr]);
+  Serial.println(lFreq[fRand_po]);
   Serial.println(catchNum);
   if(Simple.Timeout(timeoutTime))  Simple.Set(S3_H,S3_B);
 }

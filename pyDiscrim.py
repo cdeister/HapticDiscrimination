@@ -14,13 +14,13 @@ import datetime
 
 
 # behavior variables (you might want to change these)
-trialsToRun=150          # number of trials to collect
+trialsToRun=180          # number of trials to collect
 trialGrace=3000         # in ms; this is the minimum time a trial (state 2) will run for
 bufferSize=39          # in samples; The crapier the mouse the higher this needs to be.
-stopThreshold=6         # derivative crossing
+stopThreshold=7        # derivative crossing 6
 giveTerminalFeedback=1  # boolean flag to output trial state to terminal
 plotFeedback=1
-trackerSize=35          # in samples; The crapier the mouse the higher this needs to be.
+trackerSize=80          # in samples; The crapier the mouse the higher this needs to be.
 
 
 
@@ -275,7 +275,7 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
     except:
         dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
         if len(states)>20:
-            tempLen=[len(states),len(positions),len(deltas),len(timeInStates),len(totalTime),len(trialCount),len(stimChangePositions),len(stimChangeRanges),len(clickTrainLeft),len(clickTrainRight),len(pythonTime),len(trialType)]
+            tempLen=[len(states),len(positions),len(deltas),len(timeInStates),len(totalTime),len(trialCount),len(stimChangePositions),len(stimChangeRanges),len(clickTrainLeft),len(clickTrainRight),len(pythonTime),len(trialType),len(leftExpectedVal),len(rightExpectedVal)]
             smallestList=tempLen.index(min(tempLen))
             smallestLength=tempLen[smallestList]
             states=states[0:smallestLength]
@@ -289,9 +289,11 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
             clickTrainLeft=clickTrainLeft[0:smallestLength]
             clickTrainRight=clickTrainRight[0:smallestLength]
             pythonTime=pythonTime[0:smallestLength]
+            leftExpectedVal=leftExpectedVal[0:smallestLength]
+            rightExpectedVal=rightExpectedVal[0:smallestLength]
             exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime,trialType])
             exportArray = exportArray[numpy.newaxis].T
-            numpy.savetxt("jv16_%s_temp.csv" %dateString, exportArray, delimiter=",",fmt='%f')
+            numpy.savetxt("nt16_%s_temp.csv" %dateString, exportArray, delimiter=",",fmt='%f')
             arduino.write('6')
             arduino.close()
             print ('saved your shit homes')
@@ -303,9 +305,9 @@ while currentTrial<=trialsToRun: #currentTime<=60+tOffset:
 
 # save data
 dateString = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H:%M')
-exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime,trialType])
+exportArray=numpy.array([states,positions,deltas,timeInStates,totalTime,trialCount,stimChangePositions,stimChangeRanges,clickTrainLeft,clickTrainRight,pythonTime,trialType,leftExpectedVal,rightExpectedVal])
 exportArray = exportArray[numpy.newaxis].T
-numpy.savetxt("jv16_%s.csv" %dateString, exportArray, delimiter=",",fmt='%f')
+numpy.savetxt("nt16_%s.csv" %dateString, exportArray, delimiter=",",fmt='%f')
 
 # clean up
 arduino.write('6')
